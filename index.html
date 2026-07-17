@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IBA Finance Lab — School of Business Studies</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:#faf7f2;font-family:'IBM Plex Sans',sans-serif;-webkit-font-smoothing:antialiased;color:#221d1b}
+  a{color:#700f1a}
+  a:hover{color:#4a0a12}
+  input:focus,textarea:focus,select:focus{outline:2px solid #a9812f;outline-offset:1px}
+  ::selection{background:#f0d9be}
+  button{font-family:'IBM Plex Sans',sans-serif}
+  h1,h2,h3{font-family:'IBM Plex Serif',serif}
+  .max{max-width:1180px;margin:0 auto}
+  .hidden{display:none}
+
+  /* topbar */
+  .topbar{background:#700f1a;color:#f0d9be;display:flex;justify-content:space-between;align-items:center;padding:7px 40px;font-size:12px}
+  .topbar .links{display:flex;gap:22px}
+  .topbar a{color:#f0d9be;text-decoration:none}
+  .topbar .meta{opacity:.85}
+
+  /* header */
+  .header{display:flex;align-items:center;justify-content:space-between;padding:14px 40px;border-bottom:1px solid #e6ddd0;background:rgba(255,255,255,.75);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+  .brand{display:flex;align-items:center;gap:12px;cursor:pointer;background:none;border:none;padding:0}
+  .brand-mark{height:60px;width:auto;flex:none;display:block}
+  .brand-text{display:flex;flex-direction:column;line-height:1.15;text-align:left}
+  .brand-title{font-family:'IBM Plex Serif',serif;font-weight:700;font-size:19px;color:#221d1b}
+  .brand-sub{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:#7a7268}
+  .nav{display:flex;align-items:center;gap:8px}
+  .nav-btn{background:none;border:none;cursor:pointer;padding:10px 14px;font-size:13.5px;font-weight:600;color:#4a433e;border-bottom:2px solid transparent}
+  .nav-btn.active{color:#700f1a;border-bottom:2px solid #700f1a}
+  a.nav-btn{text-decoration:none;display:inline-block}
+  .nav-simtrader{color:#a9812f}
+  .nav-simtrader:hover{color:#8a6a24}
+  .btn-primary{background:#700f1a;color:#fff;border:none;border-radius:5px;padding:10px 18px;font-size:13.5px;font-weight:600;cursor:pointer;margin-left:8px}
+  .btn-primary:hover{background:#5a0c15}
+  .btn-white{background:#fff;color:#700f1a;border:none;border-radius:5px;padding:14px 26px;font-size:15px;font-weight:700;cursor:pointer;display:inline-block;text-decoration:none}
+  .btn-outline-light{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.55);border-radius:5px;padding:14px 26px;font-size:15px;font-weight:600;cursor:pointer}
+  .btn-outline{background:none;border:1px solid #d9cdb8;border-radius:5px;padding:10px 18px;font-size:13.5px;font-weight:600;cursor:pointer;color:#221d1b}
+
+  /* image slot placeholder */
+  .imgslot{width:100%;height:100%;background:linear-gradient(135deg,#e6ddd0,#f2ece1);display:flex;align-items:center;justify-content:center;color:#a9998a;font-size:13px;text-align:center;padding:8px}
+
+  /* hero */
+  .hero{position:relative;background:#5a0c15;color:#fff;padding:40px 40px 110px;min-height:100vh;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+  .hero-inner{position:relative;z-index:2;max-width:1180px;width:100%;display:flex;flex-direction:column;align-items:center;text-align:center;gap:22px}
+  .eyebrow{font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;color:#e7bd7d;font-weight:600}
+  .eyebrow-gold{font-size:12.5px;letter-spacing:.09em;text-transform:uppercase;color:#a9812f;font-weight:700}
+  .hero h1{font-weight:700;font-size:52px;line-height:1.12;margin:0;max-width:820px;text-shadow:0 2px 18px rgba(0,0,0,.3)}
+  .hero p{font-size:18px;line-height:1.6;color:#f3e3d2;max-width:680px;margin:0}
+  .hero-ctas{display:flex;gap:14px;margin-top:6px;flex-wrap:wrap;justify-content:center}
+
+  .stats{position:relative;z-index:2;max-width:1000px;width:100%;margin:52px 0 0;background:#fff;border-radius:10px;box-shadow:0 18px 40px -18px rgba(0,0,0,.5);display:grid;grid-template-columns:repeat(4,1fr);overflow:hidden}
+  .stat-cell{display:flex;flex-direction:column;gap:4px;padding:26px 20px;border-right:1px solid #eee2d3;text-align:center}
+  .stat-cell:last-child{border-right:none}
+  .stat-value{font-family:'IBM Plex Serif',serif;font-weight:700;font-size:26px;color:#700f1a}
+  .stat-label{font-size:12.5px;color:#7a7268;line-height:1.3}
+  .scroll-indicator{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);z-index:3;display:flex;flex-direction:column;align-items:center;gap:8px;background:none;border:none;color:#fff;cursor:pointer;font-size:11px;letter-spacing:.1em;text-transform:uppercase;opacity:.85;font-family:'IBM Plex Sans',sans-serif}
+  .scroll-indicator:hover{opacity:1}
+  .scroll-indicator .chevron-wrap{animation:heroBounce 1.7s infinite}
+  .scroll-indicator .chevron{width:12px;height:12px;border-right:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(45deg);display:block}
+  @keyframes heroBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(7px)}}
+
+  /* hero background carousel */
+  .hero-bg{position:absolute;inset:0;z-index:0}
+  .hero-bg .carousel-track{display:flex;height:100%;transition:transform .8s ease}
+  .hero-bg .carousel-slide{flex:0 0 100%;width:100%;height:100%}
+  .hero-bg .carousel-slide img{width:100%;height:100%;object-fit:cover;display:block}
+  .hero-overlay{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(46,7,13,.72) 0%,rgba(46,7,13,.82) 100%)}
+  .carousel-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:3;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.35);color:#fff;border:1px solid rgba(255,255,255,.35);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center}
+  .carousel-arrow:hover{background:rgba(0,0,0,.55)}
+  .carousel-arrow.prev{left:24px}
+  .carousel-arrow.next{right:24px}
+  .carousel-dots{position:relative;z-index:2;display:flex;justify-content:center;gap:8px;margin-top:40px}
+  .carousel-dot{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.4);border:none;cursor:pointer;padding:0}
+  .carousel-dot.active{background:#fff}
+
+  /* offers */
+  .offers-head{max-width:1180px;margin:0 auto;padding:80px 40px 20px;display:flex;flex-direction:column;gap:16px}
+  .offers-head h2{font-weight:700;font-size:32px;margin:0;max-width:640px}
+  .offers-grid{max-width:1180px;margin:0 auto;padding:24px 40px 90px;display:grid;grid-template-columns:repeat(4,1fr);gap:22px}
+  .offer-card{background:#fff;border:1px solid #e6ddd0;border-radius:8px;padding:26px 22px;display:flex;flex-direction:column;gap:12px}
+  .offer-bar{width:34px;height:3px;background:#700f1a}
+  .offer-card h3{font-weight:600;font-size:17px;margin:0}
+  .offer-card p{font-size:14px;line-height:1.6;color:#5c5650;margin:0}
+
+  /* partner */
+  .partner{background:#f2ece1;padding:80px 40px}
+  .partner-inner{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:1.1fr 1fr;gap:56px;align-items:center}
+  .partner-text{display:flex;flex-direction:column;gap:16px}
+  .partner-text h2{font-weight:700;font-size:30px;margin:0}
+  .partner-text p{font-size:15.5px;line-height:1.7;color:#5c5650;margin:0}
+  .partner-img{width:100%;aspect-ratio:4/3;border-radius:8px;overflow:hidden}
+
+  /* events */
+  .section-head{max-width:1180px;margin:0 auto;padding:90px 40px 30px;display:flex;justify-content:space-between;align-items:baseline;gap:20px;flex-wrap:wrap}
+  .section-head-col{display:flex;flex-direction:column;gap:10px}
+  .section-head h2{font-weight:700;font-size:30px;margin:0}
+  .events-grid{max-width:1180px;margin:0 auto;padding:20px 40px 100px;display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  .event-card{background:#fff;border:1px solid #e6ddd0;border-radius:8px;overflow:hidden;display:flex;flex-direction:column}
+  .event-img{width:100%;aspect-ratio:16/10}
+  .event-body{padding:18px 20px 22px;display:flex;flex-direction:column;gap:8px}
+  .event-meta{display:flex;align-items:center;gap:10px}
+  .event-tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:4px 9px;border-radius:4px}
+  .event-date{font-size:12px;color:#9a9186}
+  .event-body h3{font-weight:600;font-size:16.5px;margin:0;line-height:1.35}
+  .event-body p{font-size:13.5px;line-height:1.6;color:#5c5650;margin:0}
+
+  /* cta band */
+  .cta-band{background:#700f1a;padding:64px 40px}
+  .cta-inner{max-width:1180px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:30px;flex-wrap:wrap}
+  .cta-inner h2{font-weight:700;font-size:28px;margin:0;color:#fff}
+  .cta-inner p{font-size:15px;color:#f3e3d2;margin:0;max-width:520px}
+
+  /* page hero (facilities/events/contact) */
+  .page-hero{background:#700f1a;color:#fff;padding:60px 40px}
+  .page-hero-inner{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+  .page-hero h1{font-weight:700;font-size:36px;margin:0}
+  .page-hero p{font-size:15.5px;color:#f3e3d2;max-width:640px;margin:6px 0 0}
+
+  /* facilities */
+  .terminal-section{max-width:1180px;margin:0 auto;padding:70px 40px;display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
+  .terminal-img{width:100%;aspect-ratio:4/3;border-radius:8px;overflow:hidden}
+  .terminal-text{display:flex;flex-direction:column;gap:16px}
+  .terminal-text h2{font-weight:700;font-size:28px;margin:0}
+  .terminal-text > p{font-size:15px;line-height:1.7;color:#5c5650;margin:0}
+  .spec-list{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+  .spec-item{display:flex;gap:10px;align-items:baseline}
+  .spec-dash{color:#700f1a;font-weight:700}
+  .spec-text{font-size:14.5px;line-height:1.5;color:#3a3530}
+
+  .resources{background:#f2ece1;padding:70px 40px}
+  .resources-inner{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+  .resources-inner h2{font-weight:700;font-size:28px;margin:0 0 10px}
+  .resources-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px}
+  .resource-card{background:#fff;border:1px solid #e6ddd0;border-radius:8px;overflow:hidden;display:flex;flex-direction:column}
+  .resource-img{width:100%;aspect-ratio:4/3}
+  .resource-body{padding:16px 18px;display:flex;flex-direction:column;gap:6px}
+  .resource-body h3{font-weight:600;font-size:15px;margin:0}
+  .resource-body p{font-size:13px;line-height:1.55;color:#5c5650;margin:0}
+
+  .facilities-bottom{max-width:1180px;margin:0 auto;padding:70px 40px 100px;display:grid;grid-template-columns:1fr 1fr;gap:40px}
+  .panel-light{background:#fff;border:1px solid #e6ddd0;border-radius:8px;padding:30px 28px;display:flex;flex-direction:column;gap:10px}
+  .panel-light h3{font-weight:600;font-size:18px;margin:0}
+  .panel-light p{font-size:14.5px;line-height:1.7;color:#5c5650;margin:0}
+  .panel-dark{background:#700f1a;border-radius:8px;padding:30px 28px;display:flex;flex-direction:column;gap:12px;color:#fff}
+  .panel-dark h3{font-weight:600;font-size:18px;margin:0}
+  .panel-dark p{font-size:14px;line-height:1.6;color:#f3e3d2;margin:0}
+
+  /* events page */
+  .filters{max-width:1180px;margin:0 auto;padding:44px 40px 0;display:flex;gap:10px;flex-wrap:wrap}
+  .filter-btn{background:#fff;color:#4a433e;border:1px solid #e6ddd0;border-radius:20px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer}
+  .filter-btn.active{background:#700f1a;color:#fff;border:1px solid #700f1a}
+  .events-full-grid{max-width:1180px;margin:0 auto;padding:26px 40px 100px;display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  .no-results{grid-column:1/-1;text-align:center;padding:40px 0;color:#9a9186;font-size:14.5px}
+
+  /* contact */
+  .contact-grid{max-width:1180px;margin:0 auto;padding:60px 40px 100px;display:grid;grid-template-columns:1.4fr 1fr;gap:48px;align-items:start}
+  .form-card{background:#fff;border:1px solid #e6ddd0;border-radius:8px;padding:40px}
+  .form-fields{display:flex;flex-direction:column;gap:22px}
+  .field{display:flex;flex-direction:column;gap:6px}
+  .field label{font-size:13px;font-weight:600;color:#221d1b}
+  .field input,.field select,.field textarea{border:1px solid #d9cdb8;border-radius:5px;padding:11px 13px;font-size:14px;font-family:'IBM Plex Sans',sans-serif;color:#221d1b}
+  .field input.error,.field select.error{border:1px solid #a3341f}
+  .field-error{font-size:12px;color:#a3341f}
+  .visit-types{display:flex;gap:10px;flex-wrap:wrap}
+  .visit-btn{background:#fff;color:#4a433e;border:1px solid #e6ddd0;border-radius:5px;padding:10px 16px;font-size:13.5px;font-weight:600;cursor:pointer}
+  .visit-btn.active{background:#700f1a;color:#fff;border:1px solid #700f1a}
+  .submit-btn{background:#700f1a;color:#fff;border:none;border-radius:5px;padding:14px 22px;font-size:15px;font-weight:700;cursor:pointer;align-self:flex-start}
+  .success-card{background:#fff;border:1px solid #e6ddd0;border-radius:8px;padding:50px 40px;display:flex;flex-direction:column;gap:14px;align-items:flex-start}
+  .check-badge{width:44px;height:44px;border-radius:50%;background:#2f6b45;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700}
+  .success-card h2{font-weight:600;font-size:22px;margin:0}
+  .success-card p{font-size:14.5px;line-height:1.7;color:#5c5650;margin:0;max-width:440px}
+
+  .contact-side{display:flex;flex-direction:column;gap:22px}
+  .contact-info{background:#f2ece1;border-radius:8px;padding:28px 26px;display:flex;flex-direction:column;gap:14px}
+  .contact-info h3{font-weight:600;font-size:17px;margin:0}
+  .info-row{display:flex;flex-direction:column;gap:4px}
+  .info-label{font-size:12px;font-weight:600;color:#a9812f;text-transform:uppercase;letter-spacing:.06em}
+  .info-value{font-size:14px;color:#3a3530;line-height:1.5}
+  .contact-img{width:100%;aspect-ratio:4/3;border-radius:8px;overflow:hidden}
+
+  /* footer */
+  .footer{background:#4a0a12;color:#f0d9be;margin-top:auto}
+  .footer-grid{max-width:1180px;margin:0 auto;padding:60px 40px 30px;display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:40px}
+  .footer-brand{display:flex;flex-direction:column;gap:12px}
+  .footer-brand-title{font-family:'IBM Plex Serif',serif;font-weight:700;font-size:18px;color:#fff}
+  .footer-brand p{font-size:13.5px;line-height:1.7;color:#d9b98f;margin:0;max-width:280px}
+  .footer-col{display:flex;flex-direction:column;gap:10px}
+  .footer-col-title{font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#fff}
+  .footer-link{background:none;border:none;cursor:pointer;padding:0;text-align:left;font-size:13.5px;color:#d9b98f;font-family:'IBM Plex Sans',sans-serif}
+  .footer-link:hover{color:#fff}
+  .footer a{font-size:13.5px;color:#d9b98f;text-decoration:none}
+  .footer a:hover{color:#fff}
+  .footer span{font-size:13.5px;color:#d9b98f}
+  .footer-bottom{max-width:1180px;margin:0 auto;padding:20px 40px 30px;border-top:1px solid rgba(255,255,255,.12);font-size:12px;color:#c9a577}
+
+  @media (max-width:900px){
+    .header{flex-wrap:wrap;gap:10px}
+    .hero h1{font-size:36px}
+    .stats,.offers-grid,.partner-inner,.terminal-section,.resources-grid,.facilities-bottom,.events-grid,.events-full-grid,.contact-grid,.footer-grid{grid-template-columns:1fr}
+    .topbar{flex-direction:column;gap:4px;padding:8px 20px}
+    .header,.hero,.offers-head,.offers-grid,.partner,.section-head,.events-grid,.cta-band,.page-hero,.terminal-section,.resources,.facilities-bottom,.filters,.events-full-grid,.contact-grid{padding-left:20px;padding-right:20px}
+  }
+</style>
+</head>
+<body>
+<div style="min-height:100vh;display:flex;flex-direction:column">
+
+  <div style="position:sticky;top:0;z-index:50">
+    <div class="topbar">
+      <div class="links">
+        <a href="https://www.iba.edu.pk/" target="_blank">IBA Karachi</a>
+        <a href="https://sbs.iba.edu.pk/" target="_blank">School of Business Studies</a>
+      </div>
+      <div class="meta">University Road, University of Karachi&nbsp;&middot;&nbsp;+92-(213) 810-4700</div>
+    </div>
+    <div class="header">
+      <button class="brand" data-nav="home">
+        <img class="brand-mark" src="logo.png" alt="IBA logo">
+        <div class="brand-text">
+          <span class="brand-title">Finance Lab</span>
+          <span class="brand-sub">School of Business Studies</span>
+        </div>
+      </button>
+      <div class="nav">
+        <button class="nav-btn" data-nav="home">Overview</button>
+        <button class="nav-btn" data-nav="facilities">Facilities</button>
+        <button class="nav-btn" data-nav="events">Events &amp; News</button>
+        <a class="nav-btn nav-simtrader" href="/simtrader" target="_blank" rel="noopener">SimTrader &#8599;</a>
+        <button class="btn-primary" data-nav="contact">Book a Visit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOME -->
+  <div id="view-home">
+    <div class="hero">
+      <div class="hero-bg">
+        <div class="carousel-track" id="carousel-track">
+          <div class="carousel-slide"><img src="Car-1.jpg" alt="Students observing Bloomberg terminals in the Finance Lab"></div>
+          <div class="carousel-slide"><img src="Car-2.jpg" alt="IBA SBS staff and students gathered in the atrium"></div>
+          <div class="carousel-slide"><img src="Car-3.jpg" alt="Faculty demonstrating the Bloomberg Terminal to students"></div>
+        </div>
+      </div>
+      <div class="hero-overlay"></div>
+      <button class="carousel-arrow prev" id="carousel-prev" aria-label="Previous slide">&#8249;</button>
+      <button class="carousel-arrow next" id="carousel-next" aria-label="Next slide">&#8250;</button>
+
+      <div class="hero-inner">
+        <span class="eyebrow">Institute of Business Administration &middot; Karachi</span>
+        <h1>Where Financial Theory Meets Live Markets</h1>
+        <p>The IBA Finance Lab pairs a Bloomberg Terminal with real-time market data, giving School of Business Studies students hands-on experience in securities analysis, portfolio management, and financial valuation.</p>
+        <div class="hero-ctas">
+          <a class="btn-white" href="https://ibaapps.iba.edu.pk/bbt/login" target="_blank" rel="noopener">Get Bloomberg Access</a>
+        </div>
+      </div>
+
+      <div class="carousel-dots" id="carousel-dots"></div>
+
+      <div class="stats" id="stats-bar">
+        <div class="stat-cell"><span class="stat-value">1</span><span class="stat-label">Bloomberg Terminal</span></div>
+        <div class="stat-cell"><span class="stat-value">Real-Time</span><span class="stat-label">Market Data</span></div>
+        <div class="stat-cell"><span class="stat-value">Demo Accounts</span><span class="stat-label">Trading Access</span></div>
+        <div class="stat-cell"><span class="stat-value">HBL</span><span class="stat-label">Founding Partner</span></div>
+      </div>
+
+      <button class="scroll-indicator" id="scroll-indicator" aria-label="Scroll to next section">
+        <span>Scroll</span>
+        <span class="chevron-wrap"><span class="chevron"></span></span>
+      </button>
+    </div>
+
+    <div class="offers-head" id="offers-section">
+      <span class="eyebrow-gold">What the Lab Offers</span>
+      <h2>Four ways students engage with real markets</h2>
+    </div>
+    <div class="offers-grid">
+      <div class="offer-card"><div class="offer-bar"></div><h3>Bloomberg Terminal Access</h3><p>Hands-on time on a professional-grade terminal — the same tool used across trading floors and research desks.</p></div>
+      <div class="offer-card"><div class="offer-bar"></div><h3>Real-Time Market Data</h3><p>Live pricing across equities, fixed income, and FX feeds classroom exercises and independent research.</p></div>
+      <div class="offer-card"><div class="offer-bar"></div><h3>Virtual Trading Accounts</h3><p>Demo brokerage accounts let students execute and track trades without risking real capital.</p></div>
+      <div class="offer-card"><div class="offer-bar"></div><h3>Valuation &amp; Portfolio Tools</h3><p>Structured exercises in fundamental analysis, price-sensitivity, and portfolio construction.</p></div>
+    </div>
+
+    <div class="partner" id="partner-section">
+      <div class="partner-inner">
+        <div class="partner-text">
+          <span class="eyebrow-gold">In Partnership With</span>
+          <h2>HBL</h2>
+          <p>A Memorandum of Understanding between the School of Business Studies and HBL established the Finance Lab, providing SBS students an experiential learning opportunity built around live market infrastructure and demo trading facilities.</p>
+          <div><a href="#" data-nav="events">Read about the partnership &rarr;</a></div>
+        </div>
+        <div class="partner-img"><div class="imgslot">MOU signing photo</div></div>
+      </div>
+    </div>
+
+    <div class="section-head">
+      <div class="section-head-col">
+        <span class="eyebrow-gold">Latest</span>
+        <h2>Events &amp; News</h2>
+      </div>
+      <button class="btn-outline" data-nav="events">View all</button>
+    </div>
+    <div class="events-grid" id="home-events-grid"></div>
+
+    <div class="cta-band">
+      <div class="cta-inner">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <h2>Ready to see the trading floor?</h2>
+          <p>Schedule a lab tour or request demo trading account access for your class or research project.</p>
+        </div>
+        <button class="btn-white" data-nav="contact">Book a Visit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FACILITIES -->
+  <div id="view-facilities" class="hidden">
+    <div class="page-hero">
+      <div class="page-hero-inner">
+        <span class="eyebrow">Finance Lab</span>
+        <h1>Facilities</h1>
+        <p>A dedicated space built around a Bloomberg Terminal, demo trading infrastructure, and space for research and discussion.</p>
+      </div>
+    </div>
+
+    <div class="terminal-section">
+      <div class="terminal-img"><div class="imgslot">Bloomberg Terminal photo</div></div>
+      <div class="terminal-text">
+        <span class="eyebrow-gold">Centerpiece</span>
+        <h2>The Bloomberg Terminal</h2>
+        <p>The same professional-grade terminal used across trading floors and research desks worldwide, available for structured coursework and independent student research.</p>
+        <div class="spec-list">
+          <div class="spec-item"><span class="spec-dash">&mdash;</span><span class="spec-text">Real-time global market data across asset classes</span></div>
+          <div class="spec-item"><span class="spec-dash">&mdash;</span><span class="spec-text">News, research, and analyst estimates</span></div>
+          <div class="spec-item"><span class="spec-dash">&mdash;</span><span class="spec-text">Company financials and peer comparables</span></div>
+          <div class="spec-item"><span class="spec-dash">&mdash;</span><span class="spec-text">Fixed income and FX pricing tools</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="resources">
+      <div class="resources-inner">
+        <span class="eyebrow-gold">Lab Resources</span>
+        <h2>Beyond the terminal</h2>
+        <div class="resources-grid">
+          <div class="resource-card"><div class="resource-img"><div class="imgslot">Facility photo</div></div><div class="resource-body"><h3>Bloomberg Terminal Workstations</h3><p>Dedicated seats for coursework and independent research.</p></div></div>
+          <div class="resource-card"><div class="resource-img"><div class="imgslot">Facility photo</div></div><div class="resource-body"><h3>Research &amp; Data Terminals</h3><p>Supplementary access to market and company data.</p></div></div>
+          <div class="resource-card"><div class="resource-img"><div class="imgslot">Facility photo</div></div><div class="resource-body"><h3>Demo Trading Accounts</h3><p>Simulated brokerage accounts for practice trading.</p></div></div>
+          <div class="resource-card"><div class="resource-img"><div class="imgslot">Facility photo</div></div><div class="resource-body"><h3>Seminar &amp; Breakout Room</h3><p>Space for guest sessions and faculty-led workshops.</p></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="facilities-bottom">
+      <div class="panel-light">
+        <h3>Eligibility &amp; Access</h3>
+        <p>Available to SBS students enrolled in Investments, Portfolio Management, and Financial Valuation courses. Faculty may reserve the lab for research or class sessions in advance.</p>
+      </div>
+      <div class="panel-dark">
+        <h3>Not enrolled but curious?</h3>
+        <p>Corporate partners and prospective students can request a guided tour of the lab.</p>
+        <div><button class="btn-white" style="padding:11px 20px;font-size:13.5px" data-nav="contact">Book a Visit</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EVENTS -->
+  <div id="view-events" class="hidden">
+    <div class="page-hero">
+      <div class="page-hero-inner">
+        <span class="eyebrow">Finance Lab</span>
+        <h1>Events &amp; News</h1>
+        <p>Inaugurations, partnerships, workshops, and guest sessions from the lab.</p>
+      </div>
+    </div>
+    <div class="filters" id="event-filters"></div>
+    <div class="events-full-grid" id="events-full-grid"></div>
+  </div>
+
+  <!-- CONTACT -->
+  <div id="view-contact" class="hidden">
+    <div class="page-hero">
+      <div class="page-hero-inner">
+        <span class="eyebrow">Finance Lab</span>
+        <h1>Book a Visit</h1>
+        <p>Request a lab tour, demo trading account access, or start a partnership conversation.</p>
+      </div>
+    </div>
+    <div class="contact-grid">
+
+      <div id="contact-success" class="success-card hidden">
+        <div class="check-badge">&#10003;</div>
+        <h2>Request received</h2>
+        <p id="success-message"></p>
+        <button class="btn-outline" id="reset-form-btn" style="margin-top:10px">Submit another request</button>
+      </div>
+
+      <div id="contact-form-card" class="form-card">
+        <div class="form-fields">
+          <div class="field">
+            <label>Full name</label>
+            <input id="f-name" placeholder="Jane Doe">
+            <span class="field-error hidden" id="err-name"></span>
+          </div>
+          <div class="field">
+            <label>Email</label>
+            <input id="f-email" placeholder="jane.doe@iba.edu.pk">
+            <span class="field-error hidden" id="err-email"></span>
+          </div>
+          <div class="field">
+            <label>Affiliation</label>
+            <select id="f-affiliation">
+              <option value="">Select one&hellip;</option>
+              <option value="Student">Current IBA Student</option>
+              <option value="Faculty">Faculty / Researcher</option>
+              <option value="Corporate">Corporate Partner</option>
+              <option value="Prospective">Prospective Student</option>
+            </select>
+            <span class="field-error hidden" id="err-affiliation"></span>
+          </div>
+          <div class="field">
+            <label>Visit type</label>
+            <div class="visit-types" id="visit-type-group"></div>
+          </div>
+          <div class="field">
+            <label>Preferred date</label>
+            <input type="date" id="f-date">
+          </div>
+          <div class="field">
+            <label>Message (optional)</label>
+            <textarea id="f-message" rows="4" placeholder="Course, class size, or anything else we should know" style="resize:vertical"></textarea>
+          </div>
+          <button class="submit-btn" id="submit-btn">Submit Request</button>
+        </div>
+      </div>
+
+      <div class="contact-side">
+        <div class="contact-info">
+          <h3>Finance Lab</h3>
+          <div class="info-row"><span class="info-label">Location</span><span class="info-value">School of Business Studies, University Road, University of Karachi</span></div>
+          <div class="info-row"><span class="info-label">Phone</span><span class="info-value">+92-(213) 810-4700</span></div>
+          <div class="info-row"><span class="info-label">Email</span><span class="info-value">financelab@iba.edu.pk</span></div>
+          <div class="info-row"><span class="info-label">Office Hours</span><span class="info-value">Mon&ndash;Fri, 9:00am&ndash;5:00pm</span></div>
+        </div>
+        <div class="contact-img"><div class="imgslot">Lab entrance photo</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <span class="footer-brand-title">IBA Finance Lab</span>
+        <p>A joint initiative of the School of Business Studies and HBL, giving students hands-on access to real-time markets.</p>
+      </div>
+      <div class="footer-col">
+        <span class="footer-col-title">Quick Links</span>
+        <button class="footer-link" data-nav="home">Overview</button>
+        <button class="footer-link" data-nav="facilities">Facilities</button>
+        <button class="footer-link" data-nav="events">Events &amp; News</button>
+        <button class="footer-link" data-nav="contact">Book a Visit</button>
+      </div>
+      <div class="footer-col">
+        <span class="footer-col-title">Explore IBA</span>
+        <a href="https://www.iba.edu.pk/" target="_blank">IBA Karachi</a>
+        <a href="https://sbs.iba.edu.pk/" target="_blank">School of Business Studies</a>
+        <a href="https://www.iba.edu.pk/undergraduate.php" target="_blank">Undergraduate Programs</a>
+      </div>
+      <div class="footer-col">
+        <span class="footer-col-title">Contact</span>
+        <span>University Road, University of Karachi</span>
+        <span>+92-(213) 810-4700</span>
+        <span>financelab@iba.edu.pk</span>
+      </div>
+    </div>
+    <div class="footer-bottom">&copy; Institute of Business Administration (IBA) Karachi. All Rights Reserved.</div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  var events = [
+    { id: 1, category: 'Inauguration', date: 'Spring 2024', title: 'Bloomberg Terminal Unveiled at Finance Lab Inauguration', excerpt: 'SBS marked the launch of the Finance Lab with the installation of a Bloomberg Terminal, joined by senior guests from Habib Bank and the State Bank of Pakistan.' },
+    { id: 2, category: 'Partnership', date: 'Fall 2023', title: 'SBS Signs MOU with HBL', excerpt: 'The agreement establishes the Finance Lab as a joint initiative, giving students access to real-time market data and demo trading infrastructure.' },
+    { id: 3, category: 'Workshop', date: 'Feb 2025', title: 'Live Terminal Walkthrough: Reading the Market in Real Time', excerpt: 'A hands-on session on pulling company financials, comparables, and news flow directly from the Bloomberg Terminal.' },
+    { id: 4, category: 'Guest Session', date: 'Nov 2025', title: 'Corporate Connect: Careers in Equity Research', excerpt: 'Practitioners from local brokerage houses discussed how terminal-based research translates into buy-side and sell-side roles.' },
+    { id: 5, category: 'Workshop', date: 'Jan 2026', title: 'Faculty Seminar: Price-Sensitivity in Frontier Markets', excerpt: 'Faculty presented ongoing research on how local news events move security prices, using data drawn from the lab.' },
+    { id: 6, category: 'Partnership', date: 'Aug 2025', title: 'Demo Trading Accounts Open for New Cohort', excerpt: 'Newly enrolled Investments students received demo brokerage credentials for simulated trading exercises.' }
+  ];
+
+  var categoryColors = {
+    'Inauguration': '#700f1a',
+    'Partnership': '#a9812f',
+    'Workshop': '#3a6b6f',
+    'Guest Session': '#5c4a8a'
+  };
+
+  var visitTypes = ['Lab Tour', 'Demo Trading Account Access', 'Partnership Inquiry'];
+  var filterCats = ['All', 'Inauguration', 'Partnership', 'Workshop', 'Guest Session'];
+
+  var state = {
+    view: 'home',
+    eventFilter: 'All',
+    visitType: 'Lab Tour',
+    submitted: false
+  };
+
+  function eventCard(ev, idPrefix) {
+    var c = categoryColors[ev.category] || '#700f1a';
+    var card = document.createElement('div');
+    card.className = 'event-card';
+    card.innerHTML =
+      '<div class="event-img"><div class="imgslot">Event photo</div></div>' +
+      '<div class="event-body">' +
+        '<div class="event-meta">' +
+          '<span class="event-tag" style="color:' + c + ';background:' + c + '1a">' + ev.category + '</span>' +
+          '<span class="event-date">' + ev.date + '</span>' +
+        '</div>' +
+        '<h3>' + ev.title + '</h3>' +
+        '<p>' + ev.excerpt + '</p>' +
+      '</div>';
+    return card;
+  }
+
+  function renderHomeEvents() {
+    var grid = document.getElementById('home-events-grid');
+    grid.innerHTML = '';
+    events.slice(0, 3).forEach(function(ev){ grid.appendChild(eventCard(ev)); });
+  }
+
+  function renderFilters() {
+    var wrap = document.getElementById('event-filters');
+    wrap.innerHTML = '';
+    filterCats.forEach(function(cat){
+      var btn = document.createElement('button');
+      btn.className = 'filter-btn' + (state.eventFilter === cat ? ' active' : '');
+      btn.textContent = cat;
+      btn.addEventListener('click', function(){
+        state.eventFilter = cat;
+        renderFilters();
+        renderEventsFull();
+      });
+      wrap.appendChild(btn);
+    });
+  }
+
+  function renderEventsFull() {
+    var grid = document.getElementById('events-full-grid');
+    grid.innerHTML = '';
+    var filtered = state.eventFilter === 'All' ? events : events.filter(function(e){ return e.category === state.eventFilter; });
+    if (filtered.length === 0) {
+      var msg = document.createElement('div');
+      msg.className = 'no-results';
+      msg.textContent = 'No items in this category yet.';
+      grid.appendChild(msg);
+      return;
+    }
+    filtered.forEach(function(ev){ grid.appendChild(eventCard(ev)); });
+  }
+
+  function renderVisitTypes() {
+    var wrap = document.getElementById('visit-type-group');
+    wrap.innerHTML = '';
+    visitTypes.forEach(function(vt){
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'visit-btn' + (state.visitType === vt ? ' active' : '');
+      btn.textContent = vt;
+      btn.addEventListener('click', function(){
+        state.visitType = vt;
+        renderVisitTypes();
+      });
+      wrap.appendChild(btn);
+    });
+  }
+
+  function setView(view) {
+    state.view = view;
+    ['home','facilities','events','contact'].forEach(function(v){
+      document.getElementById('view-' + v).classList.toggle('hidden', v !== view);
+    });
+    document.querySelectorAll('.nav-btn').forEach(function(btn){
+      btn.classList.toggle('active', btn.getAttribute('data-nav') === view);
+    });
+    window.scrollTo(0, 0);
+  }
+
+  function validateEmail(v) { return /^\S+@\S+\.\S+$/.test(v); }
+
+  function clearErrors() {
+    ['name','email','affiliation'].forEach(function(f){
+      var el = document.getElementById('err-' + f);
+      el.classList.add('hidden');
+      el.textContent = '';
+      document.getElementById('f-' + f).classList.remove('error');
+    });
+  }
+
+  function showError(field, message) {
+    var el = document.getElementById('err-' + field);
+    el.textContent = message;
+    el.classList.remove('hidden');
+    document.getElementById('f-' + field).classList.add('error');
+  }
+
+  function handleSubmit() {
+    clearErrors();
+    var name = document.getElementById('f-name').value.trim();
+    var email = document.getElementById('f-email').value.trim();
+    var affiliation = document.getElementById('f-affiliation').value;
+    var hasError = false;
+
+    if (!name) { showError('name', 'Please enter your name.'); hasError = true; }
+    if (!email) { showError('email', 'Please enter your email.'); hasError = true; }
+    else if (!validateEmail(email)) { showError('email', 'Enter a valid email address.'); hasError = true; }
+    if (!affiliation) { showError('affiliation', 'Please select your affiliation.'); hasError = true; }
+
+    if (hasError) return;
+
+    document.getElementById('success-message').textContent =
+      'Thank you, ' + name + '. SBS Finance Lab coordinators will confirm your ' + state.visitType + ' request at ' + email + ' within two business days.';
+    document.getElementById('contact-form-card').classList.add('hidden');
+    document.getElementById('contact-success').classList.remove('hidden');
+  }
+
+  function resetForm() {
+    document.getElementById('f-name').value = '';
+    document.getElementById('f-email').value = '';
+    document.getElementById('f-affiliation').value = '';
+    document.getElementById('f-date').value = '';
+    document.getElementById('f-message').value = '';
+    state.visitType = 'Lab Tour';
+    renderVisitTypes();
+    clearErrors();
+    document.getElementById('contact-success').classList.add('hidden');
+    document.getElementById('contact-form-card').classList.remove('hidden');
+  }
+
+  document.querySelectorAll('[data-nav]').forEach(function(el){
+    el.addEventListener('click', function(e){
+      e.preventDefault();
+      setView(el.getAttribute('data-nav'));
+    });
+  });
+
+  document.getElementById('submit-btn').addEventListener('click', handleSubmit);
+  document.getElementById('reset-form-btn').addEventListener('click', resetForm);
+
+  // carousel
+  var carouselSlides = document.querySelectorAll('#carousel-track .carousel-slide');
+  var carouselTrack = document.getElementById('carousel-track');
+  var carouselDots = document.getElementById('carousel-dots');
+  var carouselIndex = 0;
+  var carouselTimer = null;
+
+  function renderCarouselDots() {
+    carouselDots.innerHTML = '';
+    carouselSlides.forEach(function(_, i){
+      var dot = document.createElement('button');
+      dot.className = 'carousel-dot' + (i === carouselIndex ? ' active' : '');
+      dot.setAttribute('aria-label', 'Go to slide ' + (i + 1));
+      dot.addEventListener('click', function(){ goToSlide(i); resetCarouselTimer(); });
+      carouselDots.appendChild(dot);
+    });
+  }
+
+  function goToSlide(i) {
+    carouselIndex = (i + carouselSlides.length) % carouselSlides.length;
+    carouselTrack.style.transform = 'translateX(-' + (carouselIndex * 100) + '%)';
+    renderCarouselDots();
+  }
+
+  function resetCarouselTimer() {
+    if (carouselTimer) clearInterval(carouselTimer);
+    carouselTimer = setInterval(function(){ goToSlide(carouselIndex + 1); }, 5000);
+  }
+
+  document.getElementById('carousel-prev').addEventListener('click', function(){ goToSlide(carouselIndex - 1); resetCarouselTimer(); });
+  document.getElementById('carousel-next').addEventListener('click', function(){ goToSlide(carouselIndex + 1); resetCarouselTimer(); });
+
+  renderCarouselDots();
+  resetCarouselTimer();
+
+  document.getElementById('scroll-indicator').addEventListener('click', function(){
+    document.getElementById('offers-section').scrollIntoView({ behavior: 'smooth' });
+  });
+
+  renderHomeEvents();
+  renderFilters();
+  renderEventsFull();
+  renderVisitTypes();
+  setView('home');
+})();
+</script>
+</body>
+</html>
