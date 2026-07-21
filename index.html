@@ -18,7 +18,7 @@
   button{font-family:'IBM Plex Sans',sans-serif}
   h1,h2,h3{font-family:'IBM Plex Serif',serif}
   .max{max-width:1180px;margin:0 auto}
-  .hidden{display:none}
+  .hidden{display:none!important}
 
   /* topbar */
   .topbar{background:#700f1a;color:#f0d9be;display:flex;justify-content:space-between;align-items:center;padding:7px 40px;font-size:12px}
@@ -86,7 +86,8 @@
   .offers-head{max-width:1180px;margin:0 auto;padding:80px 40px 20px;display:flex;flex-direction:column;gap:16px}
   .offers-head h2{font-weight:700;font-size:32px;margin:0;max-width:640px}
   .offers-grid{max-width:1180px;margin:0 auto;padding:24px 40px 90px;display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
-  .offer-card{background:#fff;border:1px solid #e6ddd0;border-radius:8px;padding:26px 22px;display:flex;flex-direction:column;gap:12px}
+  .offer-card{background:#fff;border:1px solid #e6ddd0;border-radius:8px;padding:26px 22px;display:flex;flex-direction:column;gap:12px;text-decoration:none;color:inherit;transition:box-shadow .15s,border-color .15s}
+  .offer-card:hover{border-color:#d9cdb8;box-shadow:0 10px 24px -14px rgba(0,0,0,.25)}
   .offer-bar{width:34px;height:3px;background:#700f1a}
   .offer-card h3{font-weight:600;font-size:17px;margin:0}
   .offer-card p{font-size:14px;line-height:1.6;color:#5c5650;margin:0}
@@ -162,7 +163,7 @@
   .no-results{grid-column:1/-1;text-align:center;padding:40px 0;color:#9a9186;font-size:14.5px}
 
   /* contact */
-  .contact-grid{max-width:1180px;margin:0 auto;padding:60px 40px 100px;display:grid;grid-template-columns:1.4fr 1fr;gap:48px;align-items:start}
+  .contact-grid{max-width:640px;margin:0 auto;padding:60px 40px 100px}
   .form-card{background:#fff;border:1px solid #e6ddd0;border-radius:8px;padding:40px}
   .form-fields{display:flex;flex-direction:column;gap:22px}
   .field{display:flex;flex-direction:column;gap:6px}
@@ -178,14 +179,6 @@
   .check-badge{width:44px;height:44px;border-radius:50%;background:#2f6b45;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700}
   .success-card h2{font-weight:600;font-size:22px;margin:0}
   .success-card p{font-size:14.5px;line-height:1.7;color:#5c5650;margin:0;max-width:440px}
-
-  .contact-side{display:flex;flex-direction:column;gap:22px}
-  .contact-info{background:#f2ece1;border-radius:8px;padding:28px 26px;display:flex;flex-direction:column;gap:14px}
-  .contact-info h3{font-weight:600;font-size:17px;margin:0}
-  .info-row{display:flex;flex-direction:column;gap:4px}
-  .info-label{font-size:12px;font-weight:600;color:#a9812f;text-transform:uppercase;letter-spacing:.06em}
-  .info-value{font-size:14px;color:#3a3530;line-height:1.5}
-  .contact-img{width:100%;aspect-ratio:4/3;border-radius:8px;overflow:hidden}
 
   /* footer */
   .footer{background:#4a0a12;color:#f0d9be;margin-top:auto}
@@ -205,7 +198,7 @@
   @media (max-width:900px){
     .header{flex-wrap:wrap;gap:10px}
     .hero h1{font-size:36px}
-    .stats,.offers-grid,.partner-inner,.terminal-section,.resources-grid,.facilities-bottom,.events-grid,.events-full-grid,.contact-grid,.footer-grid{grid-template-columns:1fr}
+    .stats,.offers-grid,.partner-inner,.terminal-section,.resources-grid,.facilities-bottom,.events-grid,.events-full-grid,.footer-grid{grid-template-columns:1fr}
     .topbar{flex-direction:column;gap:4px;padding:8px 20px}
     .header,.hero,.offers-head,.offers-grid,.partner,.section-head,.events-grid,.cta-band,.page-hero,.terminal-section,.resources,.facilities-bottom,.filters,.events-full-grid,.contact-grid{padding-left:20px;padding-right:20px}
   }
@@ -280,12 +273,12 @@
 
     <div class="offers-head" id="offers-section">
       <span class="eyebrow-gold">What the Lab Offers</span>
-      <h2>Four ways students engage with real markets</h2>
+      <h2>Three ways students engage with real markets</h2>
     </div>
     <div class="offers-grid">
-      <div class="offer-card"><div class="offer-bar"></div><h3>Bloomberg Terminal Access</h3><p>Hands-on time on a professional-grade terminal — the same tool used across trading floors and research desks.</p></div>
-      <div class="offer-card"><div class="offer-bar"></div><h3>Real-Time Market Data</h3><p>Live pricing across equities, fixed income, and FX feeds classroom exercises and independent research.</p></div>
-      <div class="offer-card"><div class="offer-bar"></div><h3>Virtual Trading Accounts</h3><p>Demo brokerage accounts let students execute and track trades without risking real capital.</p></div>
+      <a class="offer-card" href="blog/bloomberg-terminal-access.html"><div class="offer-bar"></div><h3>Bloomberg Terminal Access</h3><p>Hands-on time on a professional-grade terminal — the same tool used across trading floors and research desks.</p></a>
+      <a class="offer-card" href="blog/real-time-market-data.html"><div class="offer-bar"></div><h3>Real-Time Market Data</h3><p>Live pricing across equities, fixed income, and FX feeds classroom exercises and independent research.</p></a>
+      <a class="offer-card" href="blog/virtual-trading-accounts.html"><div class="offer-bar"></div><h3>Virtual Trading Accounts</h3><p>Demo brokerage accounts let students execute and track trades without risking real capital.</p></a>
     </div>
 
     <div class="partner" id="partner-section">
@@ -418,10 +411,8 @@
             <label>Affiliation</label>
             <select id="f-affiliation">
               <option value="">Select one&hellip;</option>
-              <option value="Student">Current IBA Student</option>
               <option value="Faculty">Faculty / Researcher</option>
               <option value="Corporate">Corporate Partner</option>
-              <option value="Prospective">Prospective Student</option>
             </select>
             <span class="field-error hidden" id="err-affiliation"></span>
           </div>
@@ -439,17 +430,6 @@
           </div>
           <button class="submit-btn" id="submit-btn">Submit Request</button>
         </div>
-      </div>
-
-      <div class="contact-side">
-        <div class="contact-info">
-          <h3>Finance Lab</h3>
-          <div class="info-row"><span class="info-label">Location</span><span class="info-value">School of Business Studies, University Road, University of Karachi</span></div>
-          <div class="info-row"><span class="info-label">Phone</span><span class="info-value">+92-(213) 810-4700</span></div>
-          <div class="info-row"><span class="info-label">Email</span><span class="info-value">financelab@iba.edu.pk</span></div>
-          <div class="info-row"><span class="info-label">Office Hours</span><span class="info-value">Mon&ndash;Fri, 9:00am&ndash;5:00pm</span></div>
-        </div>
-        <div class="contact-img"><div class="imgslot">Lab entrance photo</div></div>
       </div>
     </div>
   </div>
@@ -697,7 +677,10 @@
   renderFilters();
   renderEventsFull();
   renderVisitTypes();
-  setView('home');
+  var initialHash = window.location.hash.replace('#', '');
+  var initialView = ['home','facilities','events','contact'].indexOf(initialHash) !== -1 ? initialHash : 'home';
+  setView(initialView);
+  if (initialView !== 'home') { history.replaceState(null, '', window.location.pathname); }
 })();
 </script>
 </body>
