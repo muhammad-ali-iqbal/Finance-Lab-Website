@@ -3,3 +3,4 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY index.html /usr/share/nginx/html/
 COPY admin.html /usr/share/nginx/html/
 COPY assets/images /usr/share/nginx/html/assets/images
+COPY blog /usr/share/nginx/html/blog

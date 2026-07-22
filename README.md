@@ -96,6 +96,18 @@ npm start
   produce a fully working backend. `ADMIN_PASSWORD_HASH` and `SESSION_SECRET` values
   were generated in-chat and are not stored anywhere in this repo; regenerate via
   `npm run hash-password -- "..."` / `openssl rand -hex 32` if they ever need rotating.
+- **Fixed absolute `/api/...` paths breaking both `admin.html` login and the
+  `index.html` visit-request form.** The test deployment serves these pages under a
+  subpath (`https://financelab.iba.edu.pk/testing/...`), but both pages called
+  `fetch('/api/...')` — a leading `/` resolves against the domain root in the browser,
+  not the page's own subpath. That sent every request to
+  `https://financelab.iba.edu.pk/api/...` (a 404 against an unrelated app) instead of
+  `https://financelab.iba.edu.pk/testing/api/...` (the actual test backend), which
+  surfaced as "Invalid username or password" on admin login and "Something went wrong
+  sending your request" on the visit form regardless of correct input. Fixed by making
+  both endpoints relative (`fetch('api/...')` in `admin.html`,
+  `VISIT_REQUEST_ENDPOINT = 'api/visit-requests'` in `index.html`), so they resolve
+  correctly whether the site is served from the domain root or a subpath.
 
 **2026-07-21**
 - **`index.html`** — visit-request form now submits to the backend
