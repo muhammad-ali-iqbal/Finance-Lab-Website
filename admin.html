@@ -69,6 +69,66 @@
   .empty, .loading { text-align: center; padding: 3rem 0; color: #777; }
   .hidden { display: none !important; }
   .message-cell { max-width: 280px; white-space: pre-wrap; }
+  .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+  .tabs button {
+    background: #fff;
+    border: 1px solid #dde1e8;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    color: #444;
+  }
+  .tabs button.active { background: #0b2545; color: #fff; border-color: #0b2545; }
+  .toolbar { display: flex; justify-content: flex-end; margin-bottom: 1rem; }
+  .toolbar button {
+    background: #0b2545;
+    color: #fff;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  td.actions { white-space: nowrap; }
+  td.actions button {
+    background: none;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+    margin-right: 0.4rem;
+  }
+  .post-form {
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    max-width: 640px;
+  }
+  .post-form label { display: block; font-size: 0.85rem; font-weight: 600; margin: 0.9rem 0 0.3rem; }
+  .post-form label:first-child { margin-top: 0; }
+  .post-form input, .post-form textarea {
+    width: 100%;
+    padding: 0.5rem 0.6rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-family: inherit;
+  }
+  .post-form textarea { resize: vertical; }
+  .post-form .hint { font-size: 0.78rem; color: #777; margin-top: 0.25rem; }
+  .post-form .actions { margin-top: 1.25rem; display: flex; gap: 0.6rem; }
+  .post-form .actions button {
+    padding: 0.55rem 1.1rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    border: none;
+  }
+  .post-form .save-btn { background: #0b2545; color: #fff; }
+  .post-form .cancel-btn { background: #eee; color: #333; }
 </style>
 </head>
 <body>
@@ -90,23 +150,73 @@
   </div>
 
   <div id="dashboard" class="hidden">
-    <div class="loading" id="loading">Loading visit requests…</div>
-    <div class="empty hidden" id="empty">No visit requests yet.</div>
-    <table class="hidden" id="table">
-      <thead>
-        <tr>
-          <th>Submitted</th>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Affiliation</th>
-          <th>Visit type</th>
-          <th>Preferred date</th>
-          <th>Message</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody id="table-body"></tbody>
-    </table>
+    <div class="tabs">
+      <button id="tab-visits" class="active">Visit Requests</button>
+      <button id="tab-blog">Blog Posts</button>
+    </div>
+
+    <div id="visits-panel">
+      <div class="loading" id="loading">Loading visit requests…</div>
+      <div class="empty hidden" id="empty">No visit requests yet.</div>
+      <table class="hidden" id="table">
+        <thead>
+          <tr>
+            <th>Submitted</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Affiliation</th>
+            <th>Visit type</th>
+            <th>Preferred date</th>
+            <th>Message</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+
+    <div id="blog-panel" class="hidden">
+      <div id="blog-list-view">
+        <div class="toolbar"><button id="new-post-btn">New post</button></div>
+        <div class="loading" id="blog-loading">Loading blog posts…</div>
+        <div class="empty hidden" id="blog-empty">No blog posts yet.</div>
+        <table class="hidden" id="blog-table">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Slug</th>
+              <th>Last updated</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="blog-table-body"></tbody>
+        </table>
+      </div>
+
+      <div id="blog-form-view" class="hidden">
+        <div class="post-form">
+          <h2 id="blog-form-heading">New post</h2>
+          <label for="post-slug">Slug (used in the URL, e.g. <code>blog/my-post</code>)</label>
+          <input id="post-slug" type="text" placeholder="my-new-post">
+          <div class="hint">Lowercase letters, numbers, and hyphens only. Cannot be changed after creating.</div>
+          <label for="post-title">Title</label>
+          <input id="post-title" type="text">
+          <label for="post-teaser">Teaser (shown on the blog page as the intro line)</label>
+          <input id="post-teaser" type="text">
+          <label for="post-body">Body</label>
+          <textarea id="post-body" rows="14" placeholder="Write paragraphs separated by a blank line.&#10;&#10;## Use this for a heading&#10;&#10;- Use this for&#10;- a bullet list"></textarea>
+          <div class="hint">Blank line = new paragraph. A line starting with "## " is a heading. Lines starting with "- " become a bullet list.</div>
+          <label for="post-cta">Call-to-action text</label>
+          <input id="post-cta" type="text">
+          <div class="error" id="post-form-error"></div>
+          <div class="actions">
+            <button class="save-btn" id="post-save-btn">Save</button>
+            <button class="cancel-btn" id="post-cancel-btn">Cancel</button>
+            <button class="cancel-btn" id="post-delete-btn">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </main>
 
@@ -194,6 +304,140 @@
       document.getElementById('table').classList.remove('hidden');
     }).catch(function() {});
   }
+
+  var tabVisits = document.getElementById('tab-visits');
+  var tabBlog = document.getElementById('tab-blog');
+  var visitsPanel = document.getElementById('visits-panel');
+  var blogPanel = document.getElementById('blog-panel');
+
+  tabVisits.addEventListener('click', function() {
+    tabVisits.classList.add('active');
+    tabBlog.classList.remove('active');
+    visitsPanel.classList.remove('hidden');
+    blogPanel.classList.add('hidden');
+  });
+
+  tabBlog.addEventListener('click', function() {
+    tabBlog.classList.add('active');
+    tabVisits.classList.remove('active');
+    blogPanel.classList.remove('hidden');
+    visitsPanel.classList.add('hidden');
+    showBlogList();
+  });
+
+  var blogListView = document.getElementById('blog-list-view');
+  var blogFormView = document.getElementById('blog-form-view');
+  var blogFormError = document.getElementById('post-form-error');
+  var blogFormHeading = document.getElementById('blog-form-heading');
+  var slugInput = document.getElementById('post-slug');
+  var editingSlug = null;
+
+  function showBlogList() {
+    blogFormView.classList.add('hidden');
+    blogListView.classList.remove('hidden');
+    loadBlogPosts();
+  }
+
+  function loadBlogPosts() {
+    document.getElementById('blog-loading').classList.remove('hidden');
+    document.getElementById('blog-table').classList.add('hidden');
+    document.getElementById('blog-empty').classList.add('hidden');
+
+    api('/blog-posts').then(function(res) {
+      if (res.status === 401) { showLogin(); throw new Error('unauthenticated'); }
+      return res.json();
+    }).then(function(rows) {
+      document.getElementById('blog-loading').classList.add('hidden');
+      if (!rows.length) {
+        document.getElementById('blog-empty').classList.remove('hidden');
+        return;
+      }
+      var tbody = document.getElementById('blog-table-body');
+      tbody.innerHTML = '';
+      rows.forEach(function(row) {
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td>' + escapeHtml(row.title) + '</td>' +
+          '<td>' + escapeHtml(row.slug) + '</td>' +
+          '<td>' + escapeHtml(formatDate(row.updated_at)) + '</td>' +
+          '<td class="actions"></td>';
+        var editBtn = document.createElement('button');
+        editBtn.textContent = 'Edit';
+        editBtn.addEventListener('click', function() { openBlogForm(row.slug); });
+        tr.lastElementChild.appendChild(editBtn);
+        tbody.appendChild(tr);
+      });
+      document.getElementById('blog-table').classList.remove('hidden');
+    }).catch(function() {});
+  }
+
+  function clearBlogForm() {
+    slugInput.value = '';
+    slugInput.disabled = false;
+    document.getElementById('post-title').value = '';
+    document.getElementById('post-teaser').value = '';
+    document.getElementById('post-body').value = '';
+    document.getElementById('post-cta').value = '';
+    blogFormError.textContent = '';
+  }
+
+  function openBlogForm(slug) {
+    clearBlogForm();
+    editingSlug = slug || null;
+    blogListView.classList.add('hidden');
+    blogFormView.classList.remove('hidden');
+    document.getElementById('post-delete-btn').classList.toggle('hidden', !slug);
+
+    if (!slug) {
+      blogFormHeading.textContent = 'New post';
+      return;
+    }
+
+    blogFormHeading.textContent = 'Edit post';
+    slugInput.disabled = true;
+    api('/blog-posts/' + slug).then(function(res) { return res.json(); }).then(function(post) {
+      slugInput.value = post.slug;
+      document.getElementById('post-title').value = post.title;
+      document.getElementById('post-teaser').value = post.teaser;
+      document.getElementById('post-body').value = post.body_md;
+      document.getElementById('post-cta').value = post.cta_text;
+    });
+  }
+
+  document.getElementById('new-post-btn').addEventListener('click', function() { openBlogForm(null); });
+  document.getElementById('post-cancel-btn').addEventListener('click', showBlogList);
+
+  document.getElementById('post-save-btn').addEventListener('click', function() {
+    var slug = slugInput.value.trim();
+    var body = {
+      title: document.getElementById('post-title').value.trim(),
+      teaser: document.getElementById('post-teaser').value.trim(),
+      body_md: document.getElementById('post-body').value,
+      cta_text: document.getElementById('post-cta').value.trim(),
+    };
+
+    if (!/^[a-z0-9-]+$/.test(slug)) {
+      blogFormError.textContent = 'Slug must be lowercase letters, numbers, and hyphens only.';
+      return;
+    }
+    if (!body.title || !body.teaser || !body.body_md || !body.cta_text) {
+      blogFormError.textContent = 'All fields are required.';
+      return;
+    }
+
+    api('/blog-posts/' + slug, { method: 'PUT', body: JSON.stringify(body) }).then(function(res) {
+      if (!res.ok) return res.json().then(function(err) { throw new Error(err.error || 'Save failed'); });
+      showBlogList();
+    }).catch(function(err) {
+      blogFormError.textContent = err.message;
+    });
+  });
+
+  document.getElementById('post-delete-btn').addEventListener('click', function() {
+    if (!editingSlug) return;
+    if (!confirm('Delete this post? This cannot be undone.')) return;
+    api('/blog-posts/' + editingSlug, { method: 'DELETE' }).then(function() { showBlogList(); });
+  });
 
   document.getElementById('login-btn').addEventListener('click', function() {
     loginError.textContent = '';

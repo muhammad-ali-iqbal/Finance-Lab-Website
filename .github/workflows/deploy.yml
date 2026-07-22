@@ -25,6 +25,7 @@ jobs:
               --name financelab-test \
               --restart unless-stopped \
               --network app_default \
+              -v financelab-blog-content:/usr/share/nginx/html/blog:ro \
               financelab-test
 
             cd backend
@@ -36,6 +37,8 @@ jobs:
               --restart unless-stopped \
               --network app_default \
               -v financelab-api-data:/app/data \
+              -v financelab-blog-content:/app/blog-content \
+              -e BLOG_CONTENT_DIR=/app/blog-content \
               -e SMTP_HOST="${{ secrets.SMTP_HOST }}" \
               -e SMTP_PORT="${{ secrets.SMTP_PORT }}" \
               -e SMTP_USER="${{ secrets.SMTP_USER }}" \
