@@ -117,7 +117,7 @@
   var loginError = document.getElementById('login-error');
 
   function api(path, options) {
-    return fetch('/api' + path, Object.assign({ credentials: 'include', headers: { 'Content-Type': 'application/json' } }, options || {}));
+    return fetch('api' + path, Object.assign({ credentials: 'include', headers: { 'Content-Type': 'application/json' } }, options || {}));
   }
 
   function showLogin() {
