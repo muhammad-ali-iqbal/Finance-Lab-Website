@@ -1,0 +1,19 @@
+{
+  "name": "finance-lab-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "API backend for the IBA Finance Lab website: visit-request submissions, email notifications, and admin dashboard.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "hash-password": "node src/scripts/hashPassword.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.3.0",
+    "cookie": "^0.7.2",
+    "dotenv": "^17.4.2",
+    "express": "^4.19.2",
+    "nodemailer": "^9.0.3"
+  },
+  "allowScripts": {}
+}

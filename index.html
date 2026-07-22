@@ -428,6 +428,7 @@
             <label>Message (optional)</label>
             <textarea id="f-message" rows="4" placeholder="Course, class size, or anything else we should know" style="resize:vertical"></textarea>
           </div>
+          <span class="field-error hidden" id="err-submit"></span>
           <button class="submit-btn" id="submit-btn">Submit Request</button>
         </div>
       </div>
@@ -591,11 +592,16 @@
     document.getElementById('f-' + field).classList.add('error');
   }
 
+  var VISIT_REQUEST_ENDPOINT = '/api/visit-requests';
+
   function handleSubmit() {
     clearErrors();
+    document.getElementById('err-submit').classList.add('hidden');
     var name = document.getElementById('f-name').value.trim();
     var email = document.getElementById('f-email').value.trim();
     var affiliation = document.getElementById('f-affiliation').value;
+    var date = document.getElementById('f-date').value;
+    var message = document.getElementById('f-message').value.trim();
     var hasError = false;
 
     if (!name) { showError('name', 'Please enter your name.'); hasError = true; }
@@ -605,10 +611,35 @@
 
     if (hasError) return;
 
-    document.getElementById('success-message').textContent =
-      'Thank you, ' + name + '. SBS Finance Lab coordinators will confirm your ' + state.visitType + ' request at ' + email + ' within two business days.';
-    document.getElementById('contact-form-card').classList.add('hidden');
-    document.getElementById('contact-success').classList.remove('hidden');
+    var submitBtn = document.getElementById('submit-btn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting…';
+
+    fetch(VISIT_REQUEST_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({
+        name: name,
+        email: email,
+        affiliation: affiliation,
+        visitType: state.visitType,
+        preferredDate: date,
+        message: message
+      })
+    }).then(function(res) {
+      if (!res.ok) throw new Error('Request failed');
+      document.getElementById('success-message').textContent =
+        'Thank you, ' + name + '. SBS Finance Lab coordinators will confirm your ' + state.visitType + ' request at ' + email + ' within two business days.';
+      document.getElementById('contact-form-card').classList.add('hidden');
+      document.getElementById('contact-success').classList.remove('hidden');
+    }).catch(function() {
+      var el = document.getElementById('err-submit');
+      el.textContent = 'Something went wrong sending your request. Please try again or email financelab@iba.edu.pk directly.';
+      el.classList.remove('hidden');
+    }).finally(function() {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit Request';
+    });
   }
 
   function resetForm() {

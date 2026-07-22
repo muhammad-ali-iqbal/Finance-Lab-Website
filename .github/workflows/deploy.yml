@@ -26,3 +26,24 @@ jobs:
               --restart unless-stopped \
               --network app_default \
               financelab-test
+
+            cd backend
+            docker build -t financelab-api .
+            docker stop financelab-api || true
+            docker rm financelab-api || true
+            docker run -d \
+              --name financelab-api \
+              --restart unless-stopped \
+              --network app_default \
+              -v financelab-api-data:/app/data \
+              -e SMTP_HOST="${{ secrets.SMTP_HOST }}" \
+              -e SMTP_PORT="${{ secrets.SMTP_PORT }}" \
+              -e SMTP_USER="${{ secrets.SMTP_USER }}" \
+              -e SMTP_PASS="${{ secrets.SMTP_PASS }}" \
+              -e SMTP_FROM="${{ secrets.SMTP_FROM }}" \
+              -e NOTIFY_TO="${{ secrets.NOTIFY_TO }}" \
+              -e ADMIN_USERNAME="${{ secrets.ADMIN_USERNAME }}" \
+              -e ADMIN_PASSWORD_HASH="${{ secrets.ADMIN_PASSWORD_HASH }}" \
+              -e SESSION_SECRET="${{ secrets.SESSION_SECRET }}" \
+              -e NODE_ENV=production \
+              financelab-api

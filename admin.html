@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>SBS Finance Lab — Admin</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    background: #f4f5f7;
+    color: #1a1d23;
+  }
+  header {
+    background: #0b2545;
+    color: #fff;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  header h1 { font-size: 1.1rem; margin: 0; font-weight: 600; }
+  header button {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.4);
+    color: #fff;
+    padding: 0.4rem 0.9rem;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  main { max-width: 1100px; margin: 2rem auto; padding: 0 1.5rem; }
+  .login-card {
+    max-width: 360px;
+    margin: 4rem auto;
+    background: #fff;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  .login-card h2 { margin-top: 0; font-size: 1.1rem; }
+  .login-card label { display: block; font-size: 0.85rem; margin: 0.75rem 0 0.25rem; }
+  .login-card input {
+    width: 100%;
+    padding: 0.5rem 0.6rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.95rem;
+  }
+  .login-card button {
+    margin-top: 1.25rem;
+    width: 100%;
+    padding: 0.6rem;
+    background: #0b2545;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    cursor: pointer;
+  }
+  .error { color: #b3261e; font-size: 0.85rem; margin-top: 0.75rem; min-height: 1.2em; }
+  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; }
+  th, td { text-align: left; padding: 0.6rem 0.8rem; border-bottom: 1px solid #eee; font-size: 0.9rem; vertical-align: top; }
+  th { background: #eef1f6; font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  select { padding: 0.25rem 0.4rem; border-radius: 4px; border: 1px solid #ccc; }
+  .empty, .loading { text-align: center; padding: 3rem 0; color: #777; }
+  .hidden { display: none !important; }
+  .message-cell { max-width: 280px; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>SBS Finance Lab — Visit Requests</h1>
+  <button id="logout-btn" class="hidden">Log out</button>
+</header>
+
+<main>
+  <div class="login-card" id="login-card">
+    <h2>Admin sign in</h2>
+    <label for="login-username">Username</label>
+    <input id="login-username" type="text" autocomplete="username">
+    <label for="login-password">Password</label>
+    <input id="login-password" type="password" autocomplete="current-password">
+    <button id="login-btn">Sign in</button>
+    <div class="error" id="login-error"></div>
+  </div>
+
+  <div id="dashboard" class="hidden">
+    <div class="loading" id="loading">Loading visit requests…</div>
+    <div class="empty hidden" id="empty">No visit requests yet.</div>
+    <table class="hidden" id="table">
+      <thead>
+        <tr>
+          <th>Submitted</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Affiliation</th>
+          <th>Visit type</th>
+          <th>Preferred date</th>
+          <th>Message</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+    </table>
+  </div>
+</main>
+
+<script>
+  var loginCard = document.getElementById('login-card');
+  var dashboard = document.getElementById('dashboard');
+  var logoutBtn = document.getElementById('logout-btn');
+  var loginError = document.getElementById('login-error');
+
+  function api(path, options) {
+    return fetch('/api' + path, Object.assign({ credentials: 'include', headers: { 'Content-Type': 'application/json' } }, options || {}));
+  }
+
+  function showLogin() {
+    loginCard.classList.remove('hidden');
+    dashboard.classList.add('hidden');
+    logoutBtn.classList.add('hidden');
+  }
+
+  function showDashboard() {
+    loginCard.classList.add('hidden');
+    dashboard.classList.remove('hidden');
+    logoutBtn.classList.remove('hidden');
+    loadRequests();
+  }
+
+  function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str == null ? '' : str;
+    return div.innerHTML;
+  }
+
+  function formatDate(iso) {
+    if (!iso) return '-';
+    var d = new Date(iso.replace(' ', 'T') + 'Z');
+    return isNaN(d) ? iso : d.toLocaleString();
+  }
+
+  var STATUSES = ['new', 'contacted', 'confirmed', 'completed', 'declined'];
+
+  function loadRequests() {
+    document.getElementById('loading').classList.remove('hidden');
+    document.getElementById('table').classList.add('hidden');
+    document.getElementById('empty').classList.add('hidden');
+
+    api('/visit-requests').then(function(res) {
+      if (res.status === 401) { showLogin(); throw new Error('unauthenticated'); }
+      return res.json();
+    }).then(function(rows) {
+      document.getElementById('loading').classList.add('hidden');
+      if (!rows.length) {
+        document.getElementById('empty').classList.remove('hidden');
+        return;
+      }
+      var tbody = document.getElementById('table-body');
+      tbody.innerHTML = '';
+      rows.forEach(function(row) {
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td>' + escapeHtml(formatDate(row.created_at)) + '</td>' +
+          '<td>' + escapeHtml(row.name) + '</td>' +
+          '<td>' + escapeHtml(row.email) + '</td>' +
+          '<td>' + escapeHtml(row.affiliation) + '</td>' +
+          '<td>' + escapeHtml(row.visit_type) + '</td>' +
+          '<td>' + escapeHtml(row.preferred_date) + '</td>' +
+          '<td class="message-cell">' + escapeHtml(row.message) + '</td>' +
+          '<td></td>';
+
+        var statusCell = tr.lastElementChild;
+        var select = document.createElement('select');
+        STATUSES.forEach(function(s) {
+          var opt = document.createElement('option');
+          opt.value = s;
+          opt.textContent = s;
+          if (s === row.status) opt.selected = true;
+          select.appendChild(opt);
+        });
+        select.addEventListener('change', function() {
+          api('/visit-requests/' + row.id, { method: 'PATCH', body: JSON.stringify({ status: select.value }) });
+        });
+        statusCell.appendChild(select);
+
+        tbody.appendChild(tr);
+      });
+      document.getElementById('table').classList.remove('hidden');
+    }).catch(function() {});
+  }
+
+  document.getElementById('login-btn').addEventListener('click', function() {
+    loginError.textContent = '';
+    var username = document.getElementById('login-username').value.trim();
+    var password = document.getElementById('login-password').value;
+
+    api('/admin/login', { method: 'POST', body: JSON.stringify({ username: username, password: password }) })
+      .then(function(res) {
+        if (!res.ok) throw new Error('bad credentials');
+        showDashboard();
+      })
+      .catch(function() {
+        loginError.textContent = 'Invalid username or password.';
+      });
+  });
+
+  document.getElementById('login-password').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') document.getElementById('login-btn').click();
+  });
+
+  logoutBtn.addEventListener('click', function() {
+    api('/admin/logout', { method: 'POST' }).then(showLogin);
+  });
+
+  api('/admin/me').then(function(res) {
+    if (res.ok) showDashboard(); else showLogin();
+  }).catch(showLogin);
+</script>
+
+</body>
+</html>
