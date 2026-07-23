@@ -85,6 +85,22 @@ npm start
 
 ## Recent changes
 
+**2026-07-23 (even later)**
+- **Added a dedicated "Facilities" CMS tab**, bundling the Facilities page's photos
+  and text together in one place instead of scattering them across "Homepage" and
+  "Homepage Text":
+  - `backend/src/db.js` — `SITE_IMAGE_KEYS` restored to all 9 slots (Terminal +
+    4 Facility photos are back, on top of Hero/Partner).
+  - `index.html` — restored `data-image-key` on `.terminal-img`/`.resource-img`.
+  - `admin.html` — split `SITE_IMAGE_SLOTS` into `HOMEPAGE_IMAGE_SLOTS` (Hero+Partner,
+    stays under "Homepage") and `FACILITIES_IMAGE_SLOTS` (Terminal+Facility, moves to
+    the new tab); split `TEXT_FIELDS` into `HOMEPAGE_TEXT_FIELDS` (30 keys) and
+    `FACILITIES_TEXT_FIELDS` (24 keys) the same way. To avoid duplicating the
+    image-editor and text-editor JS logic across two tabs, both are now built by
+    factory functions (`setupImageEditor(opts)`, `setupTextEditor(opts)`) instantiated
+    once per tab against their own DOM ids — same behavior as before, no more
+    copy-pasted logic.
+
 **2026-07-23 (later)**
 - **Trimmed the "Homepage" image tab down to Hero Carousel + Partner Photo only** —
   `SITE_IMAGE_KEYS` in `backend/src/db.js` dropped from 9 slots to 4

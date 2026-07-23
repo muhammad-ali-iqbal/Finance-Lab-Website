@@ -162,7 +162,11 @@ if (eventCount === 0) {
   }
 }
 
-const SITE_IMAGE_KEYS = ['hero-1', 'hero-2', 'hero-3', 'partner'];
+const SITE_IMAGE_KEYS = [
+  'hero-1', 'hero-2', 'hero-3',
+  'partner', 'terminal',
+  'facility-1', 'facility-2', 'facility-3', 'facility-4',
+];
 
 const SEED_SITE_IMAGE_PATHS = {
   'hero-1': 'assets/images/car-1.jpg',

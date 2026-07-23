@@ -183,6 +183,7 @@
       <button id="tab-blog">Blog Posts</button>
       <button id="tab-events">Events &amp; News</button>
       <button id="tab-homepage">Homepage</button>
+      <button id="tab-facilities">Facilities</button>
       <button id="tab-homepage-text">Homepage Text</button>
     </div>
 
@@ -331,6 +332,45 @@
       </div>
     </div>
 
+    <div id="facilities-panel" class="hidden">
+      <h2 style="font-size: 1rem; margin: 0 0 1rem;">Photos</h2>
+      <div id="facilities-list-view">
+        <div id="facilities-slot-groups"></div>
+      </div>
+
+      <div id="facilities-form-view" class="hidden">
+        <div class="post-form">
+          <h2 id="facilities-form-heading">Edit photo</h2>
+          <label for="facilities-image">Photo</label>
+          <input id="facilities-image" type="file" accept="image/jpeg,image/png,image/webp,image/gif">
+          <div id="facilities-image-preview-box" class="pos-preview-box hidden">
+            <img id="facilities-image-preview">
+          </div>
+          <div id="facilities-position-controls" class="pos-controls hidden">
+            <label for="facilities-pos-x">Horizontal position</label>
+            <input id="facilities-pos-x" type="range" min="0" max="100" value="50">
+            <label for="facilities-pos-y">Vertical position</label>
+            <input id="facilities-pos-y" type="range" min="0" max="100" value="50">
+          </div>
+          <div class="error" id="facilities-form-error"></div>
+          <div class="actions">
+            <button class="save-btn" id="facilities-save-btn">Save</button>
+            <button class="cancel-btn" id="facilities-cancel-btn">Cancel</button>
+            <button class="cancel-btn" id="facilities-remove-btn">Remove photo</button>
+          </div>
+        </div>
+      </div>
+
+      <h2 style="font-size: 1rem; margin: 2rem 0 1rem;">Text</h2>
+      <div class="post-form" style="max-width: 640px;">
+        <div id="facilities-text-field-groups"></div>
+        <div class="error" id="facilities-text-form-error"></div>
+        <div class="actions">
+          <button class="save-btn" id="facilities-text-save-btn">Save all changes</button>
+        </div>
+      </div>
+    </div>
+
     <div id="homepage-text-panel" class="hidden">
       <div class="post-form" style="max-width: 640px;">
         <div id="text-field-groups"></div>
@@ -434,8 +474,9 @@
     visits: { btn: document.getElementById('tab-visits'), panel: document.getElementById('visits-panel') },
     blog: { btn: document.getElementById('tab-blog'), panel: document.getElementById('blog-panel'), onShow: function() { showBlogList(); } },
     events: { btn: document.getElementById('tab-events'), panel: document.getElementById('events-panel'), onShow: function() { showEventList(); } },
-    homepage: { btn: document.getElementById('tab-homepage'), panel: document.getElementById('homepage-panel'), onShow: function() { showHomepageList(); } },
-    homepageText: { btn: document.getElementById('tab-homepage-text'), panel: document.getElementById('homepage-text-panel'), onShow: function() { loadSiteText(); } }
+    homepage: { btn: document.getElementById('tab-homepage'), panel: document.getElementById('homepage-panel'), onShow: function() { homepageImageEditor.show(); } },
+    facilities: { btn: document.getElementById('tab-facilities'), panel: document.getElementById('facilities-panel'), onShow: function() { facilitiesImageEditor.show(); facilitiesTextEditor.show(); } },
+    homepageText: { btn: document.getElementById('tab-homepage-text'), panel: document.getElementById('homepage-text-panel'), onShow: function() { homepageTextEditor.show(); } }
   };
 
   Object.keys(tabs).forEach(function(key) {
@@ -740,159 +781,191 @@
     api('/events/' + editingEventId, { method: 'DELETE' }).then(function() { showEventList(); });
   });
 
-  var SITE_IMAGE_SLOTS = [
+  var HOMEPAGE_IMAGE_SLOTS = [
     { key: 'hero-1', label: 'Hero Photo 1', group: 'Hero Carousel' },
     { key: 'hero-2', label: 'Hero Photo 2', group: 'Hero Carousel' },
     { key: 'hero-3', label: 'Hero Photo 3', group: 'Hero Carousel' },
     { key: 'partner', label: 'Partner / MOU Photo', group: 'Partner Photo' }
   ];
 
-  var homepageListView = document.getElementById('homepage-list-view');
-  var homepageFormView = document.getElementById('homepage-form-view');
-  var homepageFormError = document.getElementById('homepage-form-error');
-  var homepageFormHeading = document.getElementById('homepage-form-heading');
-  var homepageImageInput = document.getElementById('homepage-image');
-  var homepageImagePreview = document.getElementById('homepage-image-preview');
-  var homepageImagePreviewBox = document.getElementById('homepage-image-preview-box');
-  var homepagePositionControls = document.getElementById('homepage-position-controls');
-  var homepagePosX = document.getElementById('homepage-pos-x');
-  var homepagePosY = document.getElementById('homepage-pos-y');
-  var homepageRemoveBtn = document.getElementById('homepage-remove-btn');
-  var editingSlotKey = null;
+  var FACILITIES_IMAGE_SLOTS = [
+    { key: 'terminal', label: 'Bloomberg Terminal Photo', group: 'Terminal Photo' },
+    { key: 'facility-1', label: 'Bloomberg Terminal Workstations', group: 'Facility Photos' },
+    { key: 'facility-2', label: 'Research & Data Terminals', group: 'Facility Photos' },
+    { key: 'facility-3', label: 'Demo Trading Accounts', group: 'Facility Photos' },
+    { key: 'facility-4', label: 'Seminar & Breakout Room', group: 'Facility Photos' }
+  ];
 
-  function updateHomepageImagePosition() {
-    homepageImagePreview.style.objectPosition = homepagePosX.value + '% ' + homepagePosY.value + '%';
-  }
+  // Builds a self-contained image-slot list + upload/reposition editor bound to one
+  // set of DOM ids. Instantiated once per tab (Homepage, Facilities) so the editing
+  // logic isn't duplicated, even though each tab has its own list+form markup.
+  function setupImageEditor(opts) {
+    var listView = document.getElementById(opts.listViewId);
+    var formView = document.getElementById(opts.formViewId);
+    var formError = document.getElementById(opts.formErrorId);
+    var formHeading = document.getElementById(opts.formHeadingId);
+    var imageInput = document.getElementById(opts.imageInputId);
+    var imagePreview = document.getElementById(opts.previewId);
+    var imagePreviewBox = document.getElementById(opts.previewBoxId);
+    var positionControls = document.getElementById(opts.posControlsId);
+    var posX = document.getElementById(opts.posXId);
+    var posY = document.getElementById(opts.posYId);
+    var removeBtn = document.getElementById(opts.removeBtnId);
+    var groupsContainer = document.getElementById(opts.groupsContainerId);
+    var editingKey = null;
 
-  homepagePosX.addEventListener('input', updateHomepageImagePosition);
-  homepagePosY.addEventListener('input', updateHomepageImagePosition);
+    function updatePosition() {
+      imagePreview.style.objectPosition = posX.value + '% ' + posY.value + '%';
+    }
+    posX.addEventListener('input', updatePosition);
+    posY.addEventListener('input', updatePosition);
 
-  function showHomepageList() {
-    homepageFormView.classList.add('hidden');
-    homepageListView.classList.remove('hidden');
-    loadHomepageImages();
-  }
+    function showList() {
+      formView.classList.add('hidden');
+      listView.classList.remove('hidden');
+      api('/site-images').then(function(res) {
+        if (res.status === 401) { showLogin(); throw new Error('unauthenticated'); }
+        return res.json();
+      }).then(function(rows) {
+        var byKey = {};
+        rows.forEach(function(row) { byKey[row.key] = row; });
+        renderGroups(byKey);
+      }).catch(function() {});
+    }
 
-  function loadHomepageImages() {
-    api('/site-images').then(function(res) {
-      if (res.status === 401) { showLogin(); throw new Error('unauthenticated'); }
-      return res.json();
-    }).then(function(rows) {
-      var byKey = {};
-      rows.forEach(function(row) { byKey[row.key] = row; });
-      renderSlotGroups(byKey);
-    }).catch(function() {});
-  }
+    function renderGroups(byKey) {
+      groupsContainer.innerHTML = '';
+      var groups = [];
+      opts.slots.forEach(function(slot) {
+        if (groups.indexOf(slot.group) === -1) groups.push(slot.group);
+      });
 
-  function renderSlotGroups(byKey) {
-    var container = document.getElementById('homepage-slot-groups');
-    container.innerHTML = '';
-    var groups = [];
-    SITE_IMAGE_SLOTS.forEach(function(slot) {
-      if (groups.indexOf(slot.group) === -1) groups.push(slot.group);
+      groups.forEach(function(group) {
+        var heading = document.createElement('div');
+        heading.className = 'slot-group-heading';
+        heading.textContent = group;
+        groupsContainer.appendChild(heading);
+
+        opts.slots.filter(function(s) { return s.group === group; }).forEach(function(slot) {
+          var row = byKey[slot.key];
+          var rowEl = document.createElement('div');
+          rowEl.className = 'slot-row';
+
+          var thumb;
+          if (row && row.image_path) {
+            thumb = document.createElement('img');
+            thumb.className = 'thumb-or-empty';
+            thumb.src = row.image_path;
+            thumb.style.objectPosition = row.image_pos_x + '% ' + row.image_pos_y + '%';
+          } else {
+            thumb = document.createElement('span');
+            thumb.className = 'thumb-or-empty';
+            thumb.textContent = 'No photo';
+          }
+          rowEl.appendChild(thumb);
+
+          var label = document.createElement('span');
+          label.className = 'slot-label';
+          label.textContent = slot.label;
+          rowEl.appendChild(label);
+
+          var editBtn = document.createElement('button');
+          editBtn.textContent = 'Edit';
+          editBtn.addEventListener('click', function() { openForm(slot, row); });
+          rowEl.appendChild(editBtn);
+
+          groupsContainer.appendChild(rowEl);
+        });
+      });
+    }
+
+    function clearForm() {
+      imageInput.value = '';
+      imagePreviewBox.classList.add('hidden');
+      positionControls.classList.add('hidden');
+      imagePreview.src = '';
+      posX.value = 50;
+      posY.value = 50;
+      updatePosition();
+      formError.textContent = '';
+    }
+
+    function showImage(src, x, y) {
+      imagePreview.src = src;
+      imagePreviewBox.classList.remove('hidden');
+      positionControls.classList.remove('hidden');
+      posX.value = x;
+      posY.value = y;
+      updatePosition();
+    }
+
+    function openForm(slot, row) {
+      clearForm();
+      editingKey = slot.key;
+      listView.classList.add('hidden');
+      formView.classList.remove('hidden');
+      formHeading.textContent = slot.label;
+      removeBtn.classList.toggle('hidden', !(row && row.image_path));
+
+      if (row && row.image_path) {
+        showImage(row.image_path, row.image_pos_x, row.image_pos_y);
+      }
+    }
+
+    imageInput.addEventListener('change', function() {
+      var file = imageInput.files[0];
+      if (!file) return;
+      showImage(URL.createObjectURL(file), 50, 50);
     });
 
-    groups.forEach(function(group) {
-      var heading = document.createElement('div');
-      heading.className = 'slot-group-heading';
-      heading.textContent = group;
-      container.appendChild(heading);
+    document.getElementById(opts.cancelBtnId).addEventListener('click', showList);
 
-      SITE_IMAGE_SLOTS.filter(function(s) { return s.group === group; }).forEach(function(slot) {
-        var row = byKey[slot.key];
-        var rowEl = document.createElement('div');
-        rowEl.className = 'slot-row';
+    document.getElementById(opts.saveBtnId).addEventListener('click', function() {
+      var formData = new FormData();
+      formData.append('image_pos_x', posX.value);
+      formData.append('image_pos_y', posY.value);
+      if (imageInput.files[0]) formData.append('image', imageInput.files[0]);
 
-        var thumb;
-        if (row && row.image_path) {
-          thumb = document.createElement('img');
-          thumb.className = 'thumb-or-empty';
-          thumb.src = row.image_path;
-          thumb.style.objectPosition = row.image_pos_x + '% ' + row.image_pos_y + '%';
-        } else {
-          thumb = document.createElement('span');
-          thumb.className = 'thumb-or-empty';
-          thumb.textContent = 'No photo';
-        }
-        rowEl.appendChild(thumb);
-
-        var label = document.createElement('span');
-        label.className = 'slot-label';
-        label.textContent = slot.label;
-        rowEl.appendChild(label);
-
-        var editBtn = document.createElement('button');
-        editBtn.textContent = 'Edit';
-        editBtn.addEventListener('click', function() { openHomepageForm(slot, row); });
-        rowEl.appendChild(editBtn);
-
-        container.appendChild(rowEl);
+      api('/site-images/' + editingKey, { method: 'PUT', body: formData }).then(function(res) {
+        if (!res.ok) return res.json().then(function(err) { throw new Error(err.error || 'Save failed'); });
+        showList();
+      }).catch(function(err) {
+        formError.textContent = err.message;
       });
     });
-  }
 
-  function clearHomepageForm() {
-    homepageImageInput.value = '';
-    homepageImagePreviewBox.classList.add('hidden');
-    homepagePositionControls.classList.add('hidden');
-    homepageImagePreview.src = '';
-    homepagePosX.value = 50;
-    homepagePosY.value = 50;
-    updateHomepageImagePosition();
-    homepageFormError.textContent = '';
-  }
-
-  function showHomepageImage(src, posX, posY) {
-    homepageImagePreview.src = src;
-    homepageImagePreviewBox.classList.remove('hidden');
-    homepagePositionControls.classList.remove('hidden');
-    homepagePosX.value = posX;
-    homepagePosY.value = posY;
-    updateHomepageImagePosition();
-  }
-
-  function openHomepageForm(slot, row) {
-    clearHomepageForm();
-    editingSlotKey = slot.key;
-    homepageListView.classList.add('hidden');
-    homepageFormView.classList.remove('hidden');
-    homepageFormHeading.textContent = slot.label;
-    homepageRemoveBtn.classList.toggle('hidden', !(row && row.image_path));
-
-    if (row && row.image_path) {
-      showHomepageImage(row.image_path, row.image_pos_x, row.image_pos_y);
-    }
-  }
-
-  homepageImageInput.addEventListener('change', function() {
-    var file = homepageImageInput.files[0];
-    if (!file) return;
-    showHomepageImage(URL.createObjectURL(file), 50, 50);
-  });
-
-  document.getElementById('homepage-cancel-btn').addEventListener('click', showHomepageList);
-
-  document.getElementById('homepage-save-btn').addEventListener('click', function() {
-    var formData = new FormData();
-    formData.append('image_pos_x', homepagePosX.value);
-    formData.append('image_pos_y', homepagePosY.value);
-    if (homepageImageInput.files[0]) formData.append('image', homepageImageInput.files[0]);
-
-    api('/site-images/' + editingSlotKey, { method: 'PUT', body: formData }).then(function(res) {
-      if (!res.ok) return res.json().then(function(err) { throw new Error(err.error || 'Save failed'); });
-      showHomepageList();
-    }).catch(function(err) {
-      homepageFormError.textContent = err.message;
+    removeBtn.addEventListener('click', function() {
+      if (!editingKey) return;
+      if (!confirm('Remove this photo? It will revert to the default appearance.')) return;
+      api('/site-images/' + editingKey, { method: 'DELETE' }).then(showList);
     });
+
+    return { show: showList };
+  }
+
+  var homepageImageEditor = setupImageEditor({
+    slots: HOMEPAGE_IMAGE_SLOTS,
+    listViewId: 'homepage-list-view', formViewId: 'homepage-form-view',
+    formErrorId: 'homepage-form-error', formHeadingId: 'homepage-form-heading',
+    imageInputId: 'homepage-image', previewId: 'homepage-image-preview',
+    previewBoxId: 'homepage-image-preview-box', posControlsId: 'homepage-position-controls',
+    posXId: 'homepage-pos-x', posYId: 'homepage-pos-y', removeBtnId: 'homepage-remove-btn',
+    groupsContainerId: 'homepage-slot-groups',
+    saveBtnId: 'homepage-save-btn', cancelBtnId: 'homepage-cancel-btn'
   });
 
-  homepageRemoveBtn.addEventListener('click', function() {
-    if (!editingSlotKey) return;
-    if (!confirm('Remove this photo? It will revert to the default appearance.')) return;
-    api('/site-images/' + editingSlotKey, { method: 'DELETE' }).then(function() { showHomepageList(); });
+  var facilitiesImageEditor = setupImageEditor({
+    slots: FACILITIES_IMAGE_SLOTS,
+    listViewId: 'facilities-list-view', formViewId: 'facilities-form-view',
+    formErrorId: 'facilities-form-error', formHeadingId: 'facilities-form-heading',
+    imageInputId: 'facilities-image', previewId: 'facilities-image-preview',
+    previewBoxId: 'facilities-image-preview-box', posControlsId: 'facilities-position-controls',
+    posXId: 'facilities-pos-x', posYId: 'facilities-pos-y', removeBtnId: 'facilities-remove-btn',
+    groupsContainerId: 'facilities-slot-groups',
+    saveBtnId: 'facilities-save-btn', cancelBtnId: 'facilities-cancel-btn'
   });
 
-  var TEXT_FIELDS = [
+  var HOMEPAGE_TEXT_FIELDS = [
     { group: 'Hero', key: 'hero-eyebrow', label: 'Eyebrow', type: 'input' },
     { group: 'Hero', key: 'hero-title', label: 'Title (H1)', type: 'input' },
     { group: 'Hero', key: 'hero-body', label: 'Body', type: 'textarea' },
@@ -921,6 +994,19 @@
     { group: 'CTA Band (Home)', key: 'cta-heading', label: 'Heading', type: 'input' },
     { group: 'CTA Band (Home)', key: 'cta-body', label: 'Body', type: 'textarea' },
 
+    { group: 'Events Page Hero', key: 'events-hero-eyebrow', label: 'Eyebrow', type: 'input' },
+    { group: 'Events Page Hero', key: 'events-hero-title', label: 'Title', type: 'input' },
+    { group: 'Events Page Hero', key: 'events-hero-body', label: 'Body', type: 'textarea' },
+
+    { group: 'Contact Page Hero', key: 'contact-hero-eyebrow', label: 'Eyebrow', type: 'input' },
+    { group: 'Contact Page Hero', key: 'contact-hero-title', label: 'Title', type: 'input' },
+    { group: 'Contact Page Hero', key: 'contact-hero-body', label: 'Body', type: 'textarea' },
+
+    { group: 'Footer', key: 'footer-brand-title', label: 'Brand title', type: 'input' },
+    { group: 'Footer', key: 'footer-brand-body', label: 'Brand body', type: 'textarea' }
+  ];
+
+  var FACILITIES_TEXT_FIELDS = [
     { group: 'Facilities Page Hero', key: 'facilities-hero-eyebrow', label: 'Eyebrow', type: 'input' },
     { group: 'Facilities Page Hero', key: 'facilities-hero-title', label: 'Title', type: 'input' },
     { group: 'Facilities Page Hero', key: 'facilities-hero-body', label: 'Body', type: 'textarea' },
@@ -948,83 +1034,85 @@
     { group: 'Facilities Bottom Panels', key: 'panel-light-heading', label: 'Light panel heading', type: 'input' },
     { group: 'Facilities Bottom Panels', key: 'panel-light-body', label: 'Light panel body', type: 'textarea' },
     { group: 'Facilities Bottom Panels', key: 'panel-dark-heading', label: 'Dark panel heading', type: 'input' },
-    { group: 'Facilities Bottom Panels', key: 'panel-dark-body', label: 'Dark panel body', type: 'textarea' },
-
-    { group: 'Events Page Hero', key: 'events-hero-eyebrow', label: 'Eyebrow', type: 'input' },
-    { group: 'Events Page Hero', key: 'events-hero-title', label: 'Title', type: 'input' },
-    { group: 'Events Page Hero', key: 'events-hero-body', label: 'Body', type: 'textarea' },
-
-    { group: 'Contact Page Hero', key: 'contact-hero-eyebrow', label: 'Eyebrow', type: 'input' },
-    { group: 'Contact Page Hero', key: 'contact-hero-title', label: 'Title', type: 'input' },
-    { group: 'Contact Page Hero', key: 'contact-hero-body', label: 'Body', type: 'textarea' },
-
-    { group: 'Footer', key: 'footer-brand-title', label: 'Brand title', type: 'input' },
-    { group: 'Footer', key: 'footer-brand-body', label: 'Brand body', type: 'textarea' }
+    { group: 'Facilities Bottom Panels', key: 'panel-dark-body', label: 'Dark panel body', type: 'textarea' }
   ];
 
-  var textFormError = document.getElementById('text-form-error');
+  // Builds a self-contained "load all -> grouped form -> save all" text editor bound
+  // to one set of fields + DOM ids. Instantiated once per tab (Homepage Text,
+  // Facilities) so a bulk save button only ever touches its own subset of keys.
+  function setupTextEditor(opts) {
+    var container = document.getElementById(opts.containerId);
+    var formError = document.getElementById(opts.errorId);
 
-  function loadSiteText() {
-    var container = document.getElementById('text-field-groups');
-    container.innerHTML = 'Loading…';
-    textFormError.textContent = '';
+    function load() {
+      container.innerHTML = 'Loading…';
+      formError.textContent = '';
 
-    api('/site-text').then(function(res) {
-      if (res.status === 401) { showLogin(); throw new Error('unauthenticated'); }
-      return res.json();
-    }).then(function(rows) {
+      api('/site-text').then(function(res) {
+        if (res.status === 401) { showLogin(); throw new Error('unauthenticated'); }
+        return res.json();
+      }).then(function(rows) {
+        var values = {};
+        rows.forEach(function(row) { values[row.key] = row.value; });
+        render(values);
+      }).catch(function() {});
+    }
+
+    function render(values) {
+      container.innerHTML = '';
+      var groups = [];
+      opts.fields.forEach(function(f) { if (groups.indexOf(f.group) === -1) groups.push(f.group); });
+
+      groups.forEach(function(group) {
+        var heading = document.createElement('h3');
+        heading.textContent = group;
+        heading.style.marginTop = '1.5rem';
+        heading.style.fontSize = '0.95rem';
+        container.appendChild(heading);
+
+        opts.fields.filter(function(f) { return f.group === group; }).forEach(function(field) {
+          var label = document.createElement('label');
+          label.setAttribute('for', opts.containerId + '-' + field.key);
+          label.textContent = field.label;
+          container.appendChild(label);
+
+          var input = document.createElement(field.type === 'textarea' ? 'textarea' : 'input');
+          input.id = opts.containerId + '-' + field.key;
+          if (field.type === 'textarea') input.rows = 3;
+          else input.type = 'text';
+          input.value = values[field.key] || '';
+          container.appendChild(input);
+        });
+      });
+    }
+
+    document.getElementById(opts.saveBtnId).addEventListener('click', function() {
       var values = {};
-      rows.forEach(function(row) { values[row.key] = row.value; });
-      renderTextForm(values);
-    }).catch(function() {});
-  }
+      opts.fields.forEach(function(field) {
+        values[field.key] = document.getElementById(opts.containerId + '-' + field.key).value;
+      });
 
-  function renderTextForm(values) {
-    var container = document.getElementById('text-field-groups');
-    container.innerHTML = '';
-    var groups = [];
-    TEXT_FIELDS.forEach(function(f) { if (groups.indexOf(f.group) === -1) groups.push(f.group); });
-
-    groups.forEach(function(group) {
-      var heading = document.createElement('h3');
-      heading.textContent = group;
-      heading.style.marginTop = '1.5rem';
-      heading.style.fontSize = '0.95rem';
-      container.appendChild(heading);
-
-      TEXT_FIELDS.filter(function(f) { return f.group === group; }).forEach(function(field) {
-        var label = document.createElement('label');
-        label.setAttribute('for', 'text-field-' + field.key);
-        label.textContent = field.label;
-        container.appendChild(label);
-
-        var input = document.createElement(field.type === 'textarea' ? 'textarea' : 'input');
-        input.id = 'text-field-' + field.key;
-        input.dataset.key = field.key;
-        if (field.type === 'textarea') input.rows = 3;
-        else input.type = 'text';
-        input.value = values[field.key] || '';
-        container.appendChild(input);
+      api('/site-text', { method: 'PUT', body: JSON.stringify({ values: values }) }).then(function(res) {
+        if (!res.ok) return res.json().then(function(err) { throw new Error(err.error || 'Save failed'); });
+        formError.style.color = '#2f6f3e';
+        formError.textContent = 'Saved.';
+      }).catch(function(err) {
+        formError.style.color = '#b3261e';
+        formError.textContent = err.message;
       });
     });
+
+    return { show: load };
   }
 
-  document.getElementById('text-save-btn').addEventListener('click', function() {
-    var values = {};
-    TEXT_FIELDS.forEach(function(field) {
-      var el = document.getElementById('text-field-' + field.key);
-      values[field.key] = el.value;
-    });
+  var homepageTextEditor = setupTextEditor({
+    fields: HOMEPAGE_TEXT_FIELDS, containerId: 'text-field-groups',
+    errorId: 'text-form-error', saveBtnId: 'text-save-btn'
+  });
 
-    api('/site-text', { method: 'PUT', body: JSON.stringify({ values: values }) }).then(function(res) {
-      if (!res.ok) return res.json().then(function(err) { throw new Error(err.error || 'Save failed'); });
-      textFormError.textContent = '';
-      textFormError.style.color = '#2f6f3e';
-      textFormError.textContent = 'Saved.';
-    }).catch(function(err) {
-      textFormError.style.color = '#b3261e';
-      textFormError.textContent = err.message;
-    });
+  var facilitiesTextEditor = setupTextEditor({
+    fields: FACILITIES_TEXT_FIELDS, containerId: 'facilities-text-field-groups',
+    errorId: 'facilities-text-form-error', saveBtnId: 'facilities-text-save-btn'
   });
 
   document.getElementById('login-btn').addEventListener('click', function() {
