@@ -6,6 +6,7 @@ const adminRouter = require('./routes/admin');
 const blogRouter = require('./routes/blog');
 const eventsRouter = require('./routes/events');
 const siteImagesRouter = require('./routes/site-images');
+const siteTextRouter = require('./routes/site-text');
 
 const app = express();
 app.use(express.json());
@@ -16,6 +17,7 @@ app.use('/api/admin', adminRouter);
 app.use('/api/blog-posts', blogRouter);
 app.use('/api/events', eventsRouter);
 app.use('/api/site-images', siteImagesRouter);
+app.use('/api/site-text', siteTextRouter);
 
 app.use((err, req, res, next) => {
   console.error(err);

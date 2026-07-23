@@ -48,6 +48,12 @@ db.exec(`
     image_pos_y INTEGER NOT NULL DEFAULT 50,
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
+
+  CREATE TABLE IF NOT EXISTS site_text (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
 `);
 
 const eventColumns = db.prepare('PRAGMA table_info(events)').all().map((c) => c.name);
@@ -156,11 +162,7 @@ if (eventCount === 0) {
   }
 }
 
-const SITE_IMAGE_KEYS = [
-  'hero-1', 'hero-2', 'hero-3',
-  'partner', 'terminal',
-  'facility-1', 'facility-2', 'facility-3', 'facility-4',
-];
+const SITE_IMAGE_KEYS = ['hero-1', 'hero-2', 'hero-3', 'partner'];
 
 const SEED_SITE_IMAGE_PATHS = {
   'hero-1': 'assets/images/car-1.jpg',
@@ -178,5 +180,86 @@ if (siteImageCount === 0) {
   }
 }
 
+const SEED_SITE_TEXT = {
+  'hero-eyebrow': 'Institute of Business Administration · Karachi',
+  'hero-title': 'Where Financial Theory Meets Live Markets',
+  'hero-body': 'The IBA Finance Lab pairs a Bloomberg Terminal with real-time market data, giving School of Business Studies students hands-on experience in securities analysis, portfolio management, and financial valuation.',
+  'hero-cta': 'Get Bloomberg Access',
+
+  'stat-1-value': '1',
+  'stat-1-label': 'Bloomberg Terminal',
+  'stat-2-value': 'Real-Time',
+  'stat-2-label': 'Market Data',
+  'stat-3-value': 'Demo Accounts',
+  'stat-3-label': 'Trading Access',
+  'stat-4-value': 'HBL',
+  'stat-4-label': 'Founding Partner',
+
+  'offers-eyebrow': 'What the Lab Offers',
+  'offers-heading': 'Three ways students engage with real markets',
+
+  'partner-eyebrow': 'In Partnership With',
+  'partner-heading': 'HBL',
+  'partner-body': 'A Memorandum of Understanding between the School of Business Studies and HBL established the Finance Lab, providing SBS students an experiential learning opportunity built around live market infrastructure and demo trading facilities.',
+  'partner-link': 'Read about the partnership →',
+
+  'events-teaser-eyebrow': 'Latest',
+  'events-teaser-heading': 'Events & News',
+
+  'cta-heading': 'Ready to see the trading floor?',
+  'cta-body': 'Schedule a lab tour or request demo trading account access for your class or research project.',
+
+  'facilities-hero-eyebrow': 'Finance Lab',
+  'facilities-hero-title': 'Facilities',
+  'facilities-hero-body': 'A dedicated space built around a Bloomberg Terminal, demo trading infrastructure, and space for research and discussion.',
+
+  'terminal-eyebrow': 'Centerpiece',
+  'terminal-heading': 'The Bloomberg Terminal',
+  'terminal-body': 'The same professional-grade terminal used across trading floors and research desks worldwide, available for structured coursework and independent student research.',
+  'terminal-spec-1': 'Real-time global market data across asset classes',
+  'terminal-spec-2': 'News, research, and analyst estimates',
+  'terminal-spec-3': 'Company financials and peer comparables',
+  'terminal-spec-4': 'Fixed income and FX pricing tools',
+
+  'resources-eyebrow': 'Lab Resources',
+  'resources-heading': 'Beyond the terminal',
+
+  'facility-1-title': 'Bloomberg Terminal Workstations',
+  'facility-1-blurb': 'Dedicated seats for coursework and independent research.',
+  'facility-2-title': 'Research & Data Terminals',
+  'facility-2-blurb': 'Supplementary access to market and company data.',
+  'facility-3-title': 'Demo Trading Accounts',
+  'facility-3-blurb': 'Simulated brokerage accounts for practice trading.',
+  'facility-4-title': 'Seminar & Breakout Room',
+  'facility-4-blurb': 'Space for guest sessions and faculty-led workshops.',
+
+  'panel-light-heading': 'Eligibility & Access',
+  'panel-light-body': 'Available to SBS students enrolled in Investments, Portfolio Management, and Financial Valuation courses. Faculty may reserve the lab for research or class sessions in advance.',
+  'panel-dark-heading': 'Not enrolled but curious?',
+  'panel-dark-body': 'Corporate partners and prospective students can request a guided tour of the lab.',
+
+  'events-hero-eyebrow': 'Finance Lab',
+  'events-hero-title': 'Events & News',
+  'events-hero-body': 'Inaugurations, partnerships, workshops, and guest sessions from the lab.',
+
+  'contact-hero-eyebrow': 'Finance Lab',
+  'contact-hero-title': 'Book a Visit',
+  'contact-hero-body': 'Request a lab tour, demo trading account access, or start a partnership conversation.',
+
+  'footer-brand-title': 'IBA Finance Lab',
+  'footer-brand-body': 'A joint initiative of the School of Business Studies and HBL, giving students hands-on access to real-time markets.',
+};
+
+const SITE_TEXT_KEYS = Object.keys(SEED_SITE_TEXT);
+
+const siteTextCount = db.prepare('SELECT COUNT(*) AS n FROM site_text').get().n;
+if (siteTextCount === 0) {
+  const insertSiteText = db.prepare('INSERT INTO site_text (key, value) VALUES (@key, @value)');
+  for (const key of SITE_TEXT_KEYS) {
+    insertSiteText.run({ key, value: SEED_SITE_TEXT[key] });
+  }
+}
+
 db.SITE_IMAGE_KEYS = SITE_IMAGE_KEYS;
+db.SITE_TEXT_KEYS = SITE_TEXT_KEYS;
 module.exports = db;

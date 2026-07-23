@@ -85,6 +85,36 @@ npm start
 
 ## Recent changes
 
+**2026-07-23 (later)**
+- **Trimmed the "Homepage" image tab down to Hero Carousel + Partner Photo only** —
+  `SITE_IMAGE_KEYS` in `backend/src/db.js` dropped from 9 slots to 4
+  (`hero-1/2/3`, `partner`); Terminal Photo and the 4 Facility Photos are plain
+  non-editable placeholder boxes again, matching their appearance before that feature
+  shipped. (Any `terminal`/`facility-*` rows already in a deployed `site_images` table
+  are simply unused now — no migration needed, nothing references those keys anymore.)
+- **Added a "Homepage Text" tab** covering ~54 headings/paragraphs across the whole
+  `index.html` single-page app (Home, Facilities, Events page-hero, Contact page-hero,
+  footer brand blurb). Deliberately excluded: nav labels, form field labels, raw
+  contact details, the footer legal line, and the 3 offer-card blurbs (already a
+  documented drift risk with the blog CMS — a third edit location would make it worse,
+  not better).
+  - `backend/src/db.js` — new `site_text` key-value table, seeded once from the
+    current hardcoded copy (`SEED_SITE_TEXT`).
+  - `backend/src/routes/site-text.js` — `GET` public; `PUT` (admin-only) takes a
+    `{ values: { key: value } }` bulk payload, validates every key against a whitelist,
+    upserts all in one `db.transaction(...)`.
+  - `index.html` — every target element got a `data-text-key="..."` attribute; a
+    `fetch('api/site-text')` on load sets `textContent` from the API response (plain
+    text, no HTML injection risk).
+  - `admin.html` — new "Homepage Text" tab: unlike the per-row "click Edit" pattern
+    used for images/events, this is one long form (grouped under section headings,
+    generated from a `TEXT_FIELDS` catalog) with a single "Save all changes" button —
+    a bulk edit fits plain text much better than 54 individual dialogs would.
+- Also answered (no code change): whether to move to a WordPress-style CMS instead of
+  continuing to extend this custom one. Recommendation was to stay custom given the
+  site's size — a WordPress migration means a full stack/hosting swap in exchange for
+  broad ad-hoc page-building flexibility this site doesn't currently need.
+
 **2026-07-23**
 - **Added a "Homepage" tab to the CMS** for the 9 fixed image slots baked into
   `index.html`: the 3 hero carousel photos, the partner/MOU photo, the Bloomberg

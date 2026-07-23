@@ -183,6 +183,7 @@
       <button id="tab-blog">Blog Posts</button>
       <button id="tab-events">Events &amp; News</button>
       <button id="tab-homepage">Homepage</button>
+      <button id="tab-homepage-text">Homepage Text</button>
     </div>
 
     <div id="visits-panel">
@@ -329,6 +330,16 @@
         </div>
       </div>
     </div>
+
+    <div id="homepage-text-panel" class="hidden">
+      <div class="post-form" style="max-width: 640px;">
+        <div id="text-field-groups"></div>
+        <div class="error" id="text-form-error"></div>
+        <div class="actions">
+          <button class="save-btn" id="text-save-btn">Save all changes</button>
+        </div>
+      </div>
+    </div>
   </div>
 </main>
 
@@ -423,7 +434,8 @@
     visits: { btn: document.getElementById('tab-visits'), panel: document.getElementById('visits-panel') },
     blog: { btn: document.getElementById('tab-blog'), panel: document.getElementById('blog-panel'), onShow: function() { showBlogList(); } },
     events: { btn: document.getElementById('tab-events'), panel: document.getElementById('events-panel'), onShow: function() { showEventList(); } },
-    homepage: { btn: document.getElementById('tab-homepage'), panel: document.getElementById('homepage-panel'), onShow: function() { showHomepageList(); } }
+    homepage: { btn: document.getElementById('tab-homepage'), panel: document.getElementById('homepage-panel'), onShow: function() { showHomepageList(); } },
+    homepageText: { btn: document.getElementById('tab-homepage-text'), panel: document.getElementById('homepage-text-panel'), onShow: function() { loadSiteText(); } }
   };
 
   Object.keys(tabs).forEach(function(key) {
@@ -732,12 +744,7 @@
     { key: 'hero-1', label: 'Hero Photo 1', group: 'Hero Carousel' },
     { key: 'hero-2', label: 'Hero Photo 2', group: 'Hero Carousel' },
     { key: 'hero-3', label: 'Hero Photo 3', group: 'Hero Carousel' },
-    { key: 'partner', label: 'Partner / MOU Photo', group: 'Partner Photo' },
-    { key: 'terminal', label: 'Bloomberg Terminal Photo', group: 'Terminal Photo' },
-    { key: 'facility-1', label: 'Bloomberg Terminal Workstations', group: 'Facility Photos' },
-    { key: 'facility-2', label: 'Research & Data Terminals', group: 'Facility Photos' },
-    { key: 'facility-3', label: 'Demo Trading Accounts', group: 'Facility Photos' },
-    { key: 'facility-4', label: 'Seminar & Breakout Room', group: 'Facility Photos' }
+    { key: 'partner', label: 'Partner / MOU Photo', group: 'Partner Photo' }
   ];
 
   var homepageListView = document.getElementById('homepage-list-view');
@@ -883,6 +890,141 @@
     if (!editingSlotKey) return;
     if (!confirm('Remove this photo? It will revert to the default appearance.')) return;
     api('/site-images/' + editingSlotKey, { method: 'DELETE' }).then(function() { showHomepageList(); });
+  });
+
+  var TEXT_FIELDS = [
+    { group: 'Hero', key: 'hero-eyebrow', label: 'Eyebrow', type: 'input' },
+    { group: 'Hero', key: 'hero-title', label: 'Title (H1)', type: 'input' },
+    { group: 'Hero', key: 'hero-body', label: 'Body', type: 'textarea' },
+    { group: 'Hero', key: 'hero-cta', label: 'CTA button text', type: 'input' },
+
+    { group: 'Stats Bar', key: 'stat-1-value', label: 'Stat 1 value', type: 'input' },
+    { group: 'Stats Bar', key: 'stat-1-label', label: 'Stat 1 label', type: 'input' },
+    { group: 'Stats Bar', key: 'stat-2-value', label: 'Stat 2 value', type: 'input' },
+    { group: 'Stats Bar', key: 'stat-2-label', label: 'Stat 2 label', type: 'input' },
+    { group: 'Stats Bar', key: 'stat-3-value', label: 'Stat 3 value', type: 'input' },
+    { group: 'Stats Bar', key: 'stat-3-label', label: 'Stat 3 label', type: 'input' },
+    { group: 'Stats Bar', key: 'stat-4-value', label: 'Stat 4 value', type: 'input' },
+    { group: 'Stats Bar', key: 'stat-4-label', label: 'Stat 4 label', type: 'input' },
+
+    { group: 'Offers Section Heading', key: 'offers-eyebrow', label: 'Eyebrow', type: 'input' },
+    { group: 'Offers Section Heading', key: 'offers-heading', label: 'Heading', type: 'input' },
+
+    { group: 'Partner Section', key: 'partner-eyebrow', label: 'Eyebrow', type: 'input' },
+    { group: 'Partner Section', key: 'partner-heading', label: 'Heading', type: 'input' },
+    { group: 'Partner Section', key: 'partner-body', label: 'Body', type: 'textarea' },
+    { group: 'Partner Section', key: 'partner-link', label: '"Read more" link text', type: 'input' },
+
+    { group: 'Events Teaser (Home)', key: 'events-teaser-eyebrow', label: 'Eyebrow', type: 'input' },
+    { group: 'Events Teaser (Home)', key: 'events-teaser-heading', label: 'Heading', type: 'input' },
+
+    { group: 'CTA Band (Home)', key: 'cta-heading', label: 'Heading', type: 'input' },
+    { group: 'CTA Band (Home)', key: 'cta-body', label: 'Body', type: 'textarea' },
+
+    { group: 'Facilities Page Hero', key: 'facilities-hero-eyebrow', label: 'Eyebrow', type: 'input' },
+    { group: 'Facilities Page Hero', key: 'facilities-hero-title', label: 'Title', type: 'input' },
+    { group: 'Facilities Page Hero', key: 'facilities-hero-body', label: 'Body', type: 'textarea' },
+
+    { group: 'Terminal Section', key: 'terminal-eyebrow', label: 'Eyebrow', type: 'input' },
+    { group: 'Terminal Section', key: 'terminal-heading', label: 'Heading', type: 'input' },
+    { group: 'Terminal Section', key: 'terminal-body', label: 'Body', type: 'textarea' },
+    { group: 'Terminal Section', key: 'terminal-spec-1', label: 'Spec item 1', type: 'input' },
+    { group: 'Terminal Section', key: 'terminal-spec-2', label: 'Spec item 2', type: 'input' },
+    { group: 'Terminal Section', key: 'terminal-spec-3', label: 'Spec item 3', type: 'input' },
+    { group: 'Terminal Section', key: 'terminal-spec-4', label: 'Spec item 4', type: 'input' },
+
+    { group: 'Resources Section Heading', key: 'resources-eyebrow', label: 'Eyebrow', type: 'input' },
+    { group: 'Resources Section Heading', key: 'resources-heading', label: 'Heading', type: 'input' },
+
+    { group: 'Facility Cards', key: 'facility-1-title', label: 'Card 1 title', type: 'input' },
+    { group: 'Facility Cards', key: 'facility-1-blurb', label: 'Card 1 blurb', type: 'textarea' },
+    { group: 'Facility Cards', key: 'facility-2-title', label: 'Card 2 title', type: 'input' },
+    { group: 'Facility Cards', key: 'facility-2-blurb', label: 'Card 2 blurb', type: 'textarea' },
+    { group: 'Facility Cards', key: 'facility-3-title', label: 'Card 3 title', type: 'input' },
+    { group: 'Facility Cards', key: 'facility-3-blurb', label: 'Card 3 blurb', type: 'textarea' },
+    { group: 'Facility Cards', key: 'facility-4-title', label: 'Card 4 title', type: 'input' },
+    { group: 'Facility Cards', key: 'facility-4-blurb', label: 'Card 4 blurb', type: 'textarea' },
+
+    { group: 'Facilities Bottom Panels', key: 'panel-light-heading', label: 'Light panel heading', type: 'input' },
+    { group: 'Facilities Bottom Panels', key: 'panel-light-body', label: 'Light panel body', type: 'textarea' },
+    { group: 'Facilities Bottom Panels', key: 'panel-dark-heading', label: 'Dark panel heading', type: 'input' },
+    { group: 'Facilities Bottom Panels', key: 'panel-dark-body', label: 'Dark panel body', type: 'textarea' },
+
+    { group: 'Events Page Hero', key: 'events-hero-eyebrow', label: 'Eyebrow', type: 'input' },
+    { group: 'Events Page Hero', key: 'events-hero-title', label: 'Title', type: 'input' },
+    { group: 'Events Page Hero', key: 'events-hero-body', label: 'Body', type: 'textarea' },
+
+    { group: 'Contact Page Hero', key: 'contact-hero-eyebrow', label: 'Eyebrow', type: 'input' },
+    { group: 'Contact Page Hero', key: 'contact-hero-title', label: 'Title', type: 'input' },
+    { group: 'Contact Page Hero', key: 'contact-hero-body', label: 'Body', type: 'textarea' },
+
+    { group: 'Footer', key: 'footer-brand-title', label: 'Brand title', type: 'input' },
+    { group: 'Footer', key: 'footer-brand-body', label: 'Brand body', type: 'textarea' }
+  ];
+
+  var textFormError = document.getElementById('text-form-error');
+
+  function loadSiteText() {
+    var container = document.getElementById('text-field-groups');
+    container.innerHTML = 'Loading…';
+    textFormError.textContent = '';
+
+    api('/site-text').then(function(res) {
+      if (res.status === 401) { showLogin(); throw new Error('unauthenticated'); }
+      return res.json();
+    }).then(function(rows) {
+      var values = {};
+      rows.forEach(function(row) { values[row.key] = row.value; });
+      renderTextForm(values);
+    }).catch(function() {});
+  }
+
+  function renderTextForm(values) {
+    var container = document.getElementById('text-field-groups');
+    container.innerHTML = '';
+    var groups = [];
+    TEXT_FIELDS.forEach(function(f) { if (groups.indexOf(f.group) === -1) groups.push(f.group); });
+
+    groups.forEach(function(group) {
+      var heading = document.createElement('h3');
+      heading.textContent = group;
+      heading.style.marginTop = '1.5rem';
+      heading.style.fontSize = '0.95rem';
+      container.appendChild(heading);
+
+      TEXT_FIELDS.filter(function(f) { return f.group === group; }).forEach(function(field) {
+        var label = document.createElement('label');
+        label.setAttribute('for', 'text-field-' + field.key);
+        label.textContent = field.label;
+        container.appendChild(label);
+
+        var input = document.createElement(field.type === 'textarea' ? 'textarea' : 'input');
+        input.id = 'text-field-' + field.key;
+        input.dataset.key = field.key;
+        if (field.type === 'textarea') input.rows = 3;
+        else input.type = 'text';
+        input.value = values[field.key] || '';
+        container.appendChild(input);
+      });
+    });
+  }
+
+  document.getElementById('text-save-btn').addEventListener('click', function() {
+    var values = {};
+    TEXT_FIELDS.forEach(function(field) {
+      var el = document.getElementById('text-field-' + field.key);
+      values[field.key] = el.value;
+    });
+
+    api('/site-text', { method: 'PUT', body: JSON.stringify({ values: values }) }).then(function(res) {
+      if (!res.ok) return res.json().then(function(err) { throw new Error(err.error || 'Save failed'); });
+      textFormError.textContent = '';
+      textFormError.style.color = '#2f6f3e';
+      textFormError.textContent = 'Saved.';
+    }).catch(function(err) {
+      textFormError.style.color = '#b3261e';
+      textFormError.textContent = err.message;
+    });
   });
 
   document.getElementById('login-btn').addEventListener('click', function() {
