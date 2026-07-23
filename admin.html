@@ -130,7 +130,18 @@
   .post-form .save-btn { background: #0b2545; color: #fff; }
   .post-form .cancel-btn { background: #eee; color: #333; }
   .thumb { width: 60px; height: 40px; object-fit: cover; border-radius: 4px; display: block; }
-  .thumb-preview { max-width: 220px; max-height: 140px; border-radius: 4px; display: block; margin-top: 0.5rem; }
+  .pos-preview-box {
+    width: 260px;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    border-radius: 4px;
+    margin-top: 0.5rem;
+    background: #f2ece1;
+  }
+  .pos-preview-box img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .pos-controls { margin-top: 0.75rem; max-width: 260px; }
+  .pos-controls label { font-size: 0.78rem; font-weight: 600; margin: 0.5rem 0 0.15rem; }
+  .pos-controls input[type="range"] { width: 100%; }
 </style>
 </head>
 <body>
@@ -255,7 +266,15 @@
           <textarea id="event-excerpt" rows="4"></textarea>
           <label for="event-image">Photo (optional)</label>
           <input id="event-image" type="file" accept="image/jpeg,image/png,image/webp,image/gif">
-          <img id="event-image-preview" class="thumb-preview hidden">
+          <div id="event-image-preview-box" class="pos-preview-box hidden">
+            <img id="event-image-preview">
+          </div>
+          <div id="event-position-controls" class="pos-controls hidden">
+            <label for="event-pos-x">Horizontal position</label>
+            <input id="event-pos-x" type="range" min="0" max="100" value="50">
+            <label for="event-pos-y">Vertical position</label>
+            <input id="event-pos-y" type="range" min="0" max="100" value="50">
+          </div>
           <div class="error" id="event-form-error"></div>
           <div class="actions">
             <button class="save-btn" id="event-save-btn">Save</button>
@@ -492,8 +511,19 @@
   var eventCategoryInput = document.getElementById('event-category');
   var eventImageInput = document.getElementById('event-image');
   var eventImagePreview = document.getElementById('event-image-preview');
+  var eventImagePreviewBox = document.getElementById('event-image-preview-box');
+  var eventPositionControls = document.getElementById('event-position-controls');
+  var eventPosX = document.getElementById('event-pos-x');
+  var eventPosY = document.getElementById('event-pos-y');
   var editingEventId = null;
   var knownCategories = [];
+
+  function updateEventImagePosition() {
+    eventImagePreview.style.objectPosition = eventPosX.value + '% ' + eventPosY.value + '%';
+  }
+
+  eventPosX.addEventListener('input', updateEventImagePosition);
+  eventPosY.addEventListener('input', updateEventImagePosition);
 
   function showEventList() {
     eventFormView.classList.add('hidden');
@@ -544,6 +574,7 @@
           var img = document.createElement('img');
           img.className = 'thumb';
           img.src = row.image_path;
+          img.style.objectPosition = (row.image_pos_x == null ? 50 : row.image_pos_x) + '% ' + (row.image_pos_y == null ? 50 : row.image_pos_y) + '%';
           tr.children[0].appendChild(img);
         } else {
           tr.children[0].textContent = '—';
@@ -565,9 +596,22 @@
     document.getElementById('event-title').value = '';
     document.getElementById('event-excerpt').value = '';
     eventImageInput.value = '';
-    eventImagePreview.classList.add('hidden');
+    eventImagePreviewBox.classList.add('hidden');
+    eventPositionControls.classList.add('hidden');
     eventImagePreview.src = '';
+    eventPosX.value = 50;
+    eventPosY.value = 50;
+    updateEventImagePosition();
     eventFormError.textContent = '';
+  }
+
+  function showEventImage(src, posX, posY) {
+    eventImagePreview.src = src;
+    eventImagePreviewBox.classList.remove('hidden');
+    eventPositionControls.classList.remove('hidden');
+    eventPosX.value = posX;
+    eventPosY.value = posY;
+    updateEventImagePosition();
   }
 
   function openEventForm(row) {
@@ -588,16 +632,14 @@
     document.getElementById('event-title').value = row.title;
     document.getElementById('event-excerpt').value = row.excerpt;
     if (row.image_path) {
-      eventImagePreview.src = row.image_path;
-      eventImagePreview.classList.remove('hidden');
+      showEventImage(row.image_path, row.image_pos_x == null ? 50 : row.image_pos_x, row.image_pos_y == null ? 50 : row.image_pos_y);
     }
   }
 
   eventImageInput.addEventListener('change', function() {
     var file = eventImageInput.files[0];
     if (!file) return;
-    eventImagePreview.src = URL.createObjectURL(file);
-    eventImagePreview.classList.remove('hidden');
+    showEventImage(URL.createObjectURL(file), 50, 50);
   });
 
   document.getElementById('new-event-btn').addEventListener('click', function() { openEventForm(null); });
@@ -619,6 +661,8 @@
     formData.append('date_label', dateLabel);
     formData.append('title', title);
     formData.append('excerpt', excerpt);
+    formData.append('image_pos_x', eventPosX.value);
+    formData.append('image_pos_y', eventPosY.value);
     if (eventImageInput.files[0]) formData.append('image', eventImageInput.files[0]);
 
     var url = editingEventId ? '/events/' + editingEventId : '/events';

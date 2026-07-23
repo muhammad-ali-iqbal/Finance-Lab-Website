@@ -115,6 +115,18 @@ npm start
     correct multipart boundary itself).
 - Also noticed `backend/blog-content/` (from yesterday's blog CMS) was missing from
   `.gitignore` — added it, alongside the new `backend/event-images/`.
+- **Fixed uploaded event photos changing the card's box shape/size.** `.event-card` is
+  a flex column, and `.event-img` (a flex item) had no `overflow` set, so its automatic
+  minimum height was based on the full uploaded image's natural size, overriding the
+  intended `aspect-ratio:16/10` box. Added `overflow:hidden` to `.event-img` — the box
+  now stays fixed and crops the photo to fit, regardless of the source image's shape.
+- **Added image repositioning** — events now have `image_pos_x`/`image_pos_y` (0–100,
+  default 50/50) controlling `object-position` on the rendered photo, so a cropped
+  photo can be re-centered on its subject. Migrated in via `ALTER TABLE` in `db.js`
+  (guarded by checking `PRAGMA table_info`) since the `events` table already has live
+  data on the VPS. The admin form gets two range sliders (horizontal/vertical) with a
+  live 16:10 preview box matching the real card's crop; values are clamped 0–100
+  server-side in `routes/events.js` regardless of what the client sends.
 
 **2026-07-22**
 - Added **`admin.html`** — the actual admin dashboard page (login form + visit-requests

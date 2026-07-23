@@ -40,6 +40,12 @@ function imageFilePath(imagePath) {
   return path.join(EVENT_IMAGES_DIR, path.basename(imagePath));
 }
 
+function clampPos(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 50;
+  return Math.max(0, Math.min(100, Math.round(n)));
+}
+
 router.get('/', (req, res) => {
   const rows = db.prepare('SELECT * FROM events ORDER BY id DESC').all();
   res.json(rows);
@@ -52,11 +58,13 @@ router.post('/', requireAdmin, upload.single('image'), (req, res) => {
   }
 
   const image_path = req.file ? `assets/images/events/${req.file.filename}` : null;
+  const image_pos_x = clampPos(req.body.image_pos_x);
+  const image_pos_y = clampPos(req.body.image_pos_y);
 
   const info = db.prepare(`
-    INSERT INTO events (category, date_label, title, excerpt, image_path)
-    VALUES (@category, @date_label, @title, @excerpt, @image_path)
-  `).run({ category, date_label, title, excerpt, image_path });
+    INSERT INTO events (category, date_label, title, excerpt, image_path, image_pos_x, image_pos_y)
+    VALUES (@category, @date_label, @title, @excerpt, @image_path, @image_pos_x, @image_pos_y)
+  `).run({ category, date_label, title, excerpt, image_path, image_pos_x, image_pos_y });
 
   res.status(201).json({ id: info.lastInsertRowid });
 });
@@ -75,12 +83,15 @@ router.put('/:id', requireAdmin, upload.single('image'), (req, res) => {
     if (existing.image_path) fs.rm(imageFilePath(existing.image_path), { force: true }, () => {});
     image_path = `assets/images/events/${req.file.filename}`;
   }
+  const image_pos_x = clampPos(req.body.image_pos_x);
+  const image_pos_y = clampPos(req.body.image_pos_y);
 
   db.prepare(`
     UPDATE events SET category = @category, date_label = @date_label, title = @title,
-      excerpt = @excerpt, image_path = @image_path, updated_at = datetime('now')
+      excerpt = @excerpt, image_path = @image_path, image_pos_x = @image_pos_x,
+      image_pos_y = @image_pos_y, updated_at = datetime('now')
     WHERE id = @id
-  `).run({ category, date_label, title, excerpt, image_path, id: req.params.id });
+  `).run({ category, date_label, title, excerpt, image_path, image_pos_x, image_pos_y, id: req.params.id });
 
   res.json({ ok: true });
 });

@@ -506,8 +506,10 @@
     var c = categoryColor(ev.category);
     var card = document.createElement('div');
     card.className = 'event-card';
+    var posX = ev.image_pos_x == null ? 50 : ev.image_pos_x;
+    var posY = ev.image_pos_y == null ? 50 : ev.image_pos_y;
     var imgHtml = ev.image_path
-      ? '<img src="' + escapeHtml(ev.image_path) + '" alt="' + escapeHtml(ev.title) + '" style="width:100%;height:100%;object-fit:cover">'
+      ? '<img src="' + escapeHtml(ev.image_path) + '" alt="' + escapeHtml(ev.title) + '" style="width:100%;height:100%;object-fit:cover;object-position:' + posX + '% ' + posY + '%">'
       : '<div class="imgslot">Event photo</div>';
     card.innerHTML =
       '<div class="event-img">' + imgHtml + '</div>' +
@@ -717,7 +719,7 @@
 
   fetch('api/events').then(function(res) { return res.json(); }).then(function(rows) {
     events = rows.map(function(row) {
-      return { id: row.id, category: row.category, date: row.date_label, title: row.title, excerpt: row.excerpt, image_path: row.image_path };
+      return { id: row.id, category: row.category, date: row.date_label, title: row.title, excerpt: row.excerpt, image_path: row.image_path, image_pos_x: row.image_pos_x, image_pos_y: row.image_pos_y };
     });
     deriveFilterCats();
     renderHomeEvents();

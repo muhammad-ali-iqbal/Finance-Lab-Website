@@ -42,6 +42,14 @@ db.exec(`
   );
 `);
 
+const eventColumns = db.prepare('PRAGMA table_info(events)').all().map((c) => c.name);
+if (!eventColumns.includes('image_pos_x')) {
+  db.exec('ALTER TABLE events ADD COLUMN image_pos_x INTEGER NOT NULL DEFAULT 50');
+}
+if (!eventColumns.includes('image_pos_y')) {
+  db.exec('ALTER TABLE events ADD COLUMN image_pos_y INTEGER NOT NULL DEFAULT 50');
+}
+
 const BLOG_CONTENT_DIR = process.env.BLOG_CONTENT_DIR || path.join(__dirname, '..', 'blog-content');
 
 const SEED_POSTS = [
