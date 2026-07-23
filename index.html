@@ -468,24 +468,26 @@
 
 <script>
 (function(){
-  var events = [
-    { id: 1, category: 'Inauguration', date: 'Spring 2024', title: 'Bloomberg Terminal Unveiled at Finance Lab Inauguration', excerpt: 'SBS marked the launch of the Finance Lab with the installation of a Bloomberg Terminal, joined by senior guests from Habib Bank and the State Bank of Pakistan.' },
-    { id: 2, category: 'Partnership', date: 'Fall 2023', title: 'SBS Signs MOU with HBL', excerpt: 'The agreement establishes the Finance Lab as a joint initiative, giving students access to real-time market data and demo trading infrastructure.' },
-    { id: 3, category: 'Workshop', date: 'Feb 2025', title: 'Live Terminal Walkthrough: Reading the Market in Real Time', excerpt: 'A hands-on session on pulling company financials, comparables, and news flow directly from the Bloomberg Terminal.' },
-    { id: 4, category: 'Guest Session', date: 'Nov 2025', title: 'Corporate Connect: Careers in Equity Research', excerpt: 'Practitioners from local brokerage houses discussed how terminal-based research translates into buy-side and sell-side roles.' },
-    { id: 5, category: 'Workshop', date: 'Jan 2026', title: 'Faculty Seminar: Price-Sensitivity in Frontier Markets', excerpt: 'Faculty presented ongoing research on how local news events move security prices, using data drawn from the lab.' },
-    { id: 6, category: 'Partnership', date: 'Aug 2025', title: 'Demo Trading Accounts Open for New Cohort', excerpt: 'Newly enrolled Investments students received demo brokerage credentials for simulated trading exercises.' }
-  ];
+  var events = [];
 
-  var categoryColors = {
-    'Inauguration': '#700f1a',
-    'Partnership': '#a9812f',
-    'Workshop': '#3a6b6f',
-    'Guest Session': '#5c4a8a'
-  };
+  var CATEGORY_PALETTE = ['#700f1a', '#a9812f', '#3a6b6f', '#5c4a8a', '#2f6f3e', '#3a5a8a'];
+
+  function categoryColor(cat) {
+    var hash = 0;
+    for (var i = 0; i < cat.length; i++) { hash = (hash * 31 + cat.charCodeAt(i)) >>> 0; }
+    return CATEGORY_PALETTE[hash % CATEGORY_PALETTE.length];
+  }
 
   var visitTypes = ['Lab Tour', 'Demo Trading Account Access', 'Partnership Inquiry'];
-  var filterCats = ['All', 'Inauguration', 'Partnership', 'Workshop', 'Guest Session'];
+  var filterCats = ['All'];
+
+  function deriveFilterCats() {
+    var seen = [];
+    events.forEach(function(ev) {
+      if (seen.indexOf(ev.category) === -1) seen.push(ev.category);
+    });
+    filterCats = ['All'].concat(seen);
+  }
 
   var state = {
     view: 'home',
@@ -494,19 +496,28 @@
     submitted: false
   };
 
+  function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str == null ? '' : str;
+    return div.innerHTML.replace(/"/g, '&quot;');
+  }
+
   function eventCard(ev, idPrefix) {
-    var c = categoryColors[ev.category] || '#700f1a';
+    var c = categoryColor(ev.category);
     var card = document.createElement('div');
     card.className = 'event-card';
+    var imgHtml = ev.image_path
+      ? '<img src="' + escapeHtml(ev.image_path) + '" alt="' + escapeHtml(ev.title) + '" style="width:100%;height:100%;object-fit:cover">'
+      : '<div class="imgslot">Event photo</div>';
     card.innerHTML =
-      '<div class="event-img"><div class="imgslot">Event photo</div></div>' +
+      '<div class="event-img">' + imgHtml + '</div>' +
       '<div class="event-body">' +
         '<div class="event-meta">' +
-          '<span class="event-tag" style="color:' + c + ';background:' + c + '1a">' + ev.category + '</span>' +
-          '<span class="event-date">' + ev.date + '</span>' +
+          '<span class="event-tag" style="color:' + c + ';background:' + c + '1a">' + escapeHtml(ev.category) + '</span>' +
+          '<span class="event-date">' + escapeHtml(ev.date) + '</span>' +
         '</div>' +
-        '<h3>' + ev.title + '</h3>' +
-        '<p>' + ev.excerpt + '</p>' +
+        '<h3>' + escapeHtml(ev.title) + '</h3>' +
+        '<p>' + escapeHtml(ev.excerpt) + '</p>' +
       '</div>';
     return card;
   }
@@ -704,9 +715,16 @@
     document.getElementById('offers-section').scrollIntoView({ behavior: 'smooth' });
   });
 
-  renderHomeEvents();
-  renderFilters();
-  renderEventsFull();
+  fetch('api/events').then(function(res) { return res.json(); }).then(function(rows) {
+    events = rows.map(function(row) {
+      return { id: row.id, category: row.category, date: row.date_label, title: row.title, excerpt: row.excerpt, image_path: row.image_path };
+    });
+    deriveFilterCats();
+    renderHomeEvents();
+    renderFilters();
+    renderEventsFull();
+  }).catch(function() {});
+
   renderVisitTypes();
   var initialHash = window.location.hash.replace('#', '');
   var initialView = ['home','facilities','events','contact'].indexOf(initialHash) !== -1 ? initialHash : 'home';

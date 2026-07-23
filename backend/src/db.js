@@ -30,6 +30,16 @@ db.exec(`
     cta_text TEXT NOT NULL,
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
+
+  CREATE TABLE IF NOT EXISTS events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    category TEXT NOT NULL,
+    date_label TEXT NOT NULL,
+    title TEXT NOT NULL,
+    excerpt TEXT NOT NULL,
+    image_path TEXT,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
 `);
 
 const BLOG_CONTENT_DIR = process.env.BLOG_CONTENT_DIR || path.join(__dirname, '..', 'blog-content');
@@ -107,6 +117,26 @@ if (postCount === 0) {
   for (const post of SEED_POSTS) {
     insert.run(post);
     fs.writeFileSync(path.join(BLOG_CONTENT_DIR, `${post.slug}.html`), renderBlogPost(post));
+  }
+}
+
+const SEED_EVENTS = [
+  { category: 'Inauguration', date_label: 'Spring 2024', title: 'Bloomberg Terminal Unveiled at Finance Lab Inauguration', excerpt: 'SBS marked the launch of the Finance Lab with the installation of a Bloomberg Terminal, joined by senior guests from Habib Bank and the State Bank of Pakistan.' },
+  { category: 'Partnership', date_label: 'Fall 2023', title: 'SBS Signs MOU with HBL', excerpt: 'The agreement establishes the Finance Lab as a joint initiative, giving students access to real-time market data and demo trading infrastructure.' },
+  { category: 'Workshop', date_label: 'Feb 2025', title: 'Live Terminal Walkthrough: Reading the Market in Real Time', excerpt: 'A hands-on session on pulling company financials, comparables, and news flow directly from the Bloomberg Terminal.' },
+  { category: 'Guest Session', date_label: 'Nov 2025', title: 'Corporate Connect: Careers in Equity Research', excerpt: 'Practitioners from local brokerage houses discussed how terminal-based research translates into buy-side and sell-side roles.' },
+  { category: 'Workshop', date_label: 'Jan 2026', title: 'Faculty Seminar: Price-Sensitivity in Frontier Markets', excerpt: 'Faculty presented ongoing research on how local news events move security prices, using data drawn from the lab.' },
+  { category: 'Partnership', date_label: 'Aug 2025', title: 'Demo Trading Accounts Open for New Cohort', excerpt: 'Newly enrolled Investments students received demo brokerage credentials for simulated trading exercises.' },
+];
+
+const eventCount = db.prepare('SELECT COUNT(*) AS n FROM events').get().n;
+if (eventCount === 0) {
+  const insertEvent = db.prepare(`
+    INSERT INTO events (category, date_label, title, excerpt)
+    VALUES (@category, @date_label, @title, @excerpt)
+  `);
+  for (const event of SEED_EVENTS) {
+    insertEvent.run(event);
   }
 }
 

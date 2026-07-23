@@ -85,6 +85,37 @@ npm start
 
 ## Recent changes
 
+**2026-07-23**
+- **Added an "Events & News" tab to the CMS** (`admin.html`), for the homepage's
+  "Events & News" section — create/edit/delete events with a category, date label,
+  title, excerpt, and an optional photo upload. This was a bigger change than the blog
+  CMS because event data previously lived as a hardcoded JS array baked directly into
+  `index.html` (no separate pages), and there was no image support anywhere for events
+  (just a placeholder "Event photo" box) — both needed new plumbing:
+  - `backend/src/routes/events.js` — `GET /api/events` is **public** (unauthenticated),
+    since this is public homepage content; `POST`/`PUT`/`DELETE` require admin. Image
+    uploads handled via `multer` (new dependency, using 2.x — 1.x has known
+    vulnerabilities), disk storage into `EVENT_IMAGES_DIR`, filenames generated
+    server-side (never trusting the client's original filename), restricted to
+    jpeg/png/webp/gif, 5MB limit.
+  - `backend/src/db.js` — new `events` table, seeded once from the 6 events that used
+    to be hardcoded in `index.html` (no images, matching prior behavior — no regression).
+  - **Deploy:** new shared Docker volume `financelab-event-images`, writable by
+    `financelab-api`, mounted read-only into `financelab-test` (nginx) at
+    `/usr/share/nginx/html/assets/images/events` — same live-update-without-redeploy
+    mechanism as the blog CMS's `financelab-blog-content` volume.
+  - `index.html` — the hardcoded `events` array is gone; the homepage now fetches
+    `api/events` at load and renders from that. Category filter buttons/colors
+    (previously two more hardcoded lists) are now derived dynamically from whatever
+    categories exist in the data, so a brand-new category typed into the CMS "just
+    works" with a distinct color — no code edit needed. Added an `escapeHtml` helper
+    since event content is no longer hardcoded trusted strings.
+  - `admin.html`'s shared `api()` helper now skips setting `Content-Type` when the
+    request body is `FormData` (needed for the image upload — the browser sets the
+    correct multipart boundary itself).
+- Also noticed `backend/blog-content/` (from yesterday's blog CMS) was missing from
+  `.gitignore` — added it, alongside the new `backend/event-images/`.
+
 **2026-07-22**
 - Added **`admin.html`** — the actual admin dashboard page (login form + visit-requests
   table with status updates). See "Admin access" above. Wired into the root
@@ -108,6 +139,43 @@ npm start
   both endpoints relative (`fetch('api/...')` in `admin.html`,
   `VISIT_REQUEST_ENDPOINT = 'api/visit-requests'` in `index.html`), so they resolve
   correctly whether the site is served from the domain root or a subpath.
+- **Fixed the 3 blog pages (`blog/*.html`) not deploying at all.** The root
+  `Dockerfile` never copied the `blog/` folder into the nginx image, so
+  `/testing/blog/<slug>.html` 404'd and nginx's SPA fallback
+  (`try_files ... /index.html`) silently served the homepage instead — with broken
+  styling, since its relative asset paths resolved against `/testing/blog/` instead of
+  `/testing/`. Fixed by adding `COPY blog /usr/share/nginx/html/blog` — later superseded
+  by the CMS volume mount (see below).
+- **Clean URLs for blog posts, no `.html` exposed.** `nginx.conf`'s `try_files` now
+  checks `$uri.html`, so `/blog/<slug>` serves `blog/<slug>.html` without the extension
+  showing; a redirect rule sends any direct `.html` hit to the clean URL. Updated the
+  homepage's "What the Lab Offers" card links and each blog page's logo/back-link/CTA
+  links (previously `../index.html#...`) to use clean URLs (`../`, `../#offers-section`,
+  `../#contact`) so navigating from a blog post back to the homepage doesn't reintroduce
+  `index.html` into the address bar.
+- **Added a lightweight blog CMS**, reusing the existing `admin.html` login (no new
+  auth system, no GitHub OAuth) — decided against Decap CMS after considering it,
+  since it would've required a separate GitHub-OAuth login and a CI build step for what
+  is currently 3 simple posts:
+  - `backend/src/blogTemplate.js` — renders the shared blog-page shell (extracted from
+    the 3 existing pages) from structured fields (title, teaser, body, CTA text), with
+    a small paragraph/`## heading`/`- bullet` markdown-like convention for the body.
+  - `backend/src/db.js` — new `blog_posts` SQLite table, seeded once from the 3
+    existing posts' content (verified the rendered output matches the original
+    hand-written HTML exactly).
+  - `backend/src/routes/blog.js` — `GET/PUT/DELETE /api/blog-posts[/:slug]`, behind the
+    same `requireAdmin` session-cookie middleware used by visit-requests. Slugs are
+    validated (`^[a-z0-9-]+$`) to block path traversal.
+  - `admin.html` — new "Blog Posts" tab alongside "Visit Requests" (same login), with
+    list/create/edit/delete for posts.
+  - **Deploy change:** blog HTML is no longer baked into the nginx image. A new shared
+    Docker volume (`financelab-blog-content`) is writable by `financelab-api` and
+    mounted read-only into `financelab-test` (nginx) at `/usr/share/nginx/html/blog` —
+    so saving a post via the CMS updates the live site instantly, no redeploy needed.
+  - Known limitation: the homepage's 3 offer cards (`index.html`) are still manually
+    maintained and not generated from the CMS content — editing a post's teaser via the
+    CMS won't update the homepage blurb, and a new post needs a manual link added to
+    `index.html`.
 
 **2026-07-21**
 - **`index.html`** — visit-request form now submits to the backend

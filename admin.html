@@ -129,6 +129,8 @@
   }
   .post-form .save-btn { background: #0b2545; color: #fff; }
   .post-form .cancel-btn { background: #eee; color: #333; }
+  .thumb { width: 60px; height: 40px; object-fit: cover; border-radius: 4px; display: block; }
+  .thumb-preview { max-width: 220px; max-height: 140px; border-radius: 4px; display: block; margin-top: 0.5rem; }
 </style>
 </head>
 <body>
@@ -153,6 +155,7 @@
     <div class="tabs">
       <button id="tab-visits" class="active">Visit Requests</button>
       <button id="tab-blog">Blog Posts</button>
+      <button id="tab-events">Events &amp; News</button>
     </div>
 
     <div id="visits-panel">
@@ -217,6 +220,51 @@
         </div>
       </div>
     </div>
+
+    <div id="events-panel" class="hidden">
+      <div id="event-list-view">
+        <div class="toolbar"><button id="new-event-btn">New event</button></div>
+        <div class="loading" id="event-loading">Loading events…</div>
+        <div class="empty hidden" id="event-empty">No events yet.</div>
+        <table class="hidden" id="event-table">
+          <thead>
+            <tr>
+              <th>Photo</th>
+              <th>Category</th>
+              <th>Date</th>
+              <th>Title</th>
+              <th>Last updated</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="event-table-body"></tbody>
+        </table>
+      </div>
+
+      <div id="event-form-view" class="hidden">
+        <div class="post-form">
+          <h2 id="event-form-heading">New event</h2>
+          <label for="event-category">Category</label>
+          <input id="event-category" type="text" list="event-category-options" placeholder="e.g. Workshop">
+          <datalist id="event-category-options"></datalist>
+          <label for="event-date">Date label</label>
+          <input id="event-date" type="text" placeholder="e.g. Feb 2026">
+          <label for="event-title">Title</label>
+          <input id="event-title" type="text">
+          <label for="event-excerpt">Excerpt</label>
+          <textarea id="event-excerpt" rows="4"></textarea>
+          <label for="event-image">Photo (optional)</label>
+          <input id="event-image" type="file" accept="image/jpeg,image/png,image/webp,image/gif">
+          <img id="event-image-preview" class="thumb-preview hidden">
+          <div class="error" id="event-form-error"></div>
+          <div class="actions">
+            <button class="save-btn" id="event-save-btn">Save</button>
+            <button class="cancel-btn" id="event-cancel-btn">Cancel</button>
+            <button class="cancel-btn" id="event-delete-btn">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </main>
 
@@ -227,7 +275,9 @@
   var loginError = document.getElementById('login-error');
 
   function api(path, options) {
-    return fetch('api' + path, Object.assign({ credentials: 'include', headers: { 'Content-Type': 'application/json' } }, options || {}));
+    options = options || {};
+    var headers = options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' };
+    return fetch('api' + path, Object.assign({ credentials: 'include', headers: headers }, options));
   }
 
   function showLogin() {
@@ -305,24 +355,20 @@
     }).catch(function() {});
   }
 
-  var tabVisits = document.getElementById('tab-visits');
-  var tabBlog = document.getElementById('tab-blog');
-  var visitsPanel = document.getElementById('visits-panel');
-  var blogPanel = document.getElementById('blog-panel');
+  var tabs = {
+    visits: { btn: document.getElementById('tab-visits'), panel: document.getElementById('visits-panel') },
+    blog: { btn: document.getElementById('tab-blog'), panel: document.getElementById('blog-panel'), onShow: function() { showBlogList(); } },
+    events: { btn: document.getElementById('tab-events'), panel: document.getElementById('events-panel'), onShow: function() { showEventList(); } }
+  };
 
-  tabVisits.addEventListener('click', function() {
-    tabVisits.classList.add('active');
-    tabBlog.classList.remove('active');
-    visitsPanel.classList.remove('hidden');
-    blogPanel.classList.add('hidden');
-  });
-
-  tabBlog.addEventListener('click', function() {
-    tabBlog.classList.add('active');
-    tabVisits.classList.remove('active');
-    blogPanel.classList.remove('hidden');
-    visitsPanel.classList.add('hidden');
-    showBlogList();
+  Object.keys(tabs).forEach(function(key) {
+    tabs[key].btn.addEventListener('click', function() {
+      Object.keys(tabs).forEach(function(k) {
+        tabs[k].btn.classList.toggle('active', k === key);
+        tabs[k].panel.classList.toggle('hidden', k !== key);
+      });
+      if (tabs[key].onShow) tabs[key].onShow();
+    });
   });
 
   var blogListView = document.getElementById('blog-list-view');
@@ -437,6 +483,159 @@
     if (!editingSlug) return;
     if (!confirm('Delete this post? This cannot be undone.')) return;
     api('/blog-posts/' + editingSlug, { method: 'DELETE' }).then(function() { showBlogList(); });
+  });
+
+  var eventListView = document.getElementById('event-list-view');
+  var eventFormView = document.getElementById('event-form-view');
+  var eventFormError = document.getElementById('event-form-error');
+  var eventFormHeading = document.getElementById('event-form-heading');
+  var eventCategoryInput = document.getElementById('event-category');
+  var eventImageInput = document.getElementById('event-image');
+  var eventImagePreview = document.getElementById('event-image-preview');
+  var editingEventId = null;
+  var knownCategories = [];
+
+  function showEventList() {
+    eventFormView.classList.add('hidden');
+    eventListView.classList.remove('hidden');
+    loadEvents();
+  }
+
+  function loadEvents() {
+    document.getElementById('event-loading').classList.remove('hidden');
+    document.getElementById('event-table').classList.add('hidden');
+    document.getElementById('event-empty').classList.add('hidden');
+
+    api('/events').then(function(res) {
+      if (res.status === 401) { showLogin(); throw new Error('unauthenticated'); }
+      return res.json();
+    }).then(function(rows) {
+      document.getElementById('event-loading').classList.add('hidden');
+
+      knownCategories = [];
+      rows.forEach(function(row) {
+        if (knownCategories.indexOf(row.category) === -1) knownCategories.push(row.category);
+      });
+      var datalist = document.getElementById('event-category-options');
+      datalist.innerHTML = '';
+      knownCategories.forEach(function(cat) {
+        var opt = document.createElement('option');
+        opt.value = cat;
+        datalist.appendChild(opt);
+      });
+
+      if (!rows.length) {
+        document.getElementById('event-empty').classList.remove('hidden');
+        return;
+      }
+      var tbody = document.getElementById('event-table-body');
+      tbody.innerHTML = '';
+      rows.forEach(function(row) {
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td></td>' +
+          '<td>' + escapeHtml(row.category) + '</td>' +
+          '<td>' + escapeHtml(row.date_label) + '</td>' +
+          '<td>' + escapeHtml(row.title) + '</td>' +
+          '<td>' + escapeHtml(formatDate(row.updated_at)) + '</td>' +
+          '<td class="actions"></td>';
+
+        if (row.image_path) {
+          var img = document.createElement('img');
+          img.className = 'thumb';
+          img.src = row.image_path;
+          tr.children[0].appendChild(img);
+        } else {
+          tr.children[0].textContent = '—';
+        }
+
+        var editBtn = document.createElement('button');
+        editBtn.textContent = 'Edit';
+        editBtn.addEventListener('click', function() { openEventForm(row); });
+        tr.lastElementChild.appendChild(editBtn);
+        tbody.appendChild(tr);
+      });
+      document.getElementById('event-table').classList.remove('hidden');
+    }).catch(function() {});
+  }
+
+  function clearEventForm() {
+    eventCategoryInput.value = '';
+    document.getElementById('event-date').value = '';
+    document.getElementById('event-title').value = '';
+    document.getElementById('event-excerpt').value = '';
+    eventImageInput.value = '';
+    eventImagePreview.classList.add('hidden');
+    eventImagePreview.src = '';
+    eventFormError.textContent = '';
+  }
+
+  function openEventForm(row) {
+    clearEventForm();
+    editingEventId = row ? row.id : null;
+    eventListView.classList.add('hidden');
+    eventFormView.classList.remove('hidden');
+    document.getElementById('event-delete-btn').classList.toggle('hidden', !row);
+
+    if (!row) {
+      eventFormHeading.textContent = 'New event';
+      return;
+    }
+
+    eventFormHeading.textContent = 'Edit event';
+    eventCategoryInput.value = row.category;
+    document.getElementById('event-date').value = row.date_label;
+    document.getElementById('event-title').value = row.title;
+    document.getElementById('event-excerpt').value = row.excerpt;
+    if (row.image_path) {
+      eventImagePreview.src = row.image_path;
+      eventImagePreview.classList.remove('hidden');
+    }
+  }
+
+  eventImageInput.addEventListener('change', function() {
+    var file = eventImageInput.files[0];
+    if (!file) return;
+    eventImagePreview.src = URL.createObjectURL(file);
+    eventImagePreview.classList.remove('hidden');
+  });
+
+  document.getElementById('new-event-btn').addEventListener('click', function() { openEventForm(null); });
+  document.getElementById('event-cancel-btn').addEventListener('click', showEventList);
+
+  document.getElementById('event-save-btn').addEventListener('click', function() {
+    var category = eventCategoryInput.value.trim();
+    var dateLabel = document.getElementById('event-date').value.trim();
+    var title = document.getElementById('event-title').value.trim();
+    var excerpt = document.getElementById('event-excerpt').value.trim();
+
+    if (!category || !dateLabel || !title || !excerpt) {
+      eventFormError.textContent = 'All fields are required.';
+      return;
+    }
+
+    var formData = new FormData();
+    formData.append('category', category);
+    formData.append('date_label', dateLabel);
+    formData.append('title', title);
+    formData.append('excerpt', excerpt);
+    if (eventImageInput.files[0]) formData.append('image', eventImageInput.files[0]);
+
+    var url = editingEventId ? '/events/' + editingEventId : '/events';
+    var method = editingEventId ? 'PUT' : 'POST';
+
+    api(url, { method: method, body: formData }).then(function(res) {
+      if (!res.ok) return res.json().then(function(err) { throw new Error(err.error || 'Save failed'); });
+      showEventList();
+    }).catch(function(err) {
+      eventFormError.textContent = err.message;
+    });
+  });
+
+  document.getElementById('event-delete-btn').addEventListener('click', function() {
+    if (!editingEventId) return;
+    if (!confirm('Delete this event? This cannot be undone.')) return;
+    api('/events/' + editingEventId, { method: 'DELETE' }).then(function() { showEventList(); });
   });
 
   document.getElementById('login-btn').addEventListener('click', function() {
