@@ -27,6 +27,7 @@ jobs:
               --network app_default \
               -v financelab-blog-content:/usr/share/nginx/html/blog:ro \
               -v financelab-event-images:/usr/share/nginx/html/assets/images/events:ro \
+              -v financelab-site-images:/usr/share/nginx/html/assets/images/site:ro \
               financelab-test
 
             cd backend
@@ -40,8 +41,10 @@ jobs:
               -v financelab-api-data:/app/data \
               -v financelab-blog-content:/app/blog-content \
               -v financelab-event-images:/app/event-images \
+              -v financelab-site-images:/app/site-images \
               -e BLOG_CONTENT_DIR=/app/blog-content \
               -e EVENT_IMAGES_DIR=/app/event-images \
+              -e SITE_IMAGES_DIR=/app/site-images \
               -e SMTP_HOST="${{ secrets.SMTP_HOST }}" \
               -e SMTP_PORT="${{ secrets.SMTP_PORT }}" \
               -e SMTP_USER="${{ secrets.SMTP_USER }}" \

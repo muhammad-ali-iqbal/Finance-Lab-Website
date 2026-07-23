@@ -86,6 +86,32 @@ npm start
 ## Recent changes
 
 **2026-07-23**
+- **Added a "Homepage" tab to the CMS** for the 9 fixed image slots baked into
+  `index.html`: the 3 hero carousel photos, the partner/MOU photo, the Bloomberg
+  Terminal photo, and the 4 facility photos. Unlike blog posts/events (repeatable
+  rows), these are fixed named slots, so the design is a key-value table rather than a
+  list:
+  - `backend/src/db.js` — new `site_images` table (`key` primary key), seeded once
+    with all 9 slots; the 3 hero slots seed pointing at the existing
+    `assets/images/car-1/2/3.jpg` (so the API always has something to return), the
+    other 6 seed with no image (placeholder stays exactly as before).
+  - `backend/src/routes/site-images.js` — `GET /api/events`-style public listing;
+    `PUT`/`DELETE /api/site-images/:key` (admin-only) validate the key against a fixed
+    whitelist and reuse the same multer upload pattern as events. `DELETE` reverts a
+    slot to null (hero slots fall back to their bundled photo since `index.html` only
+    overrides `src` when the API returns a non-null path; the other 6 fall back to the
+    placeholder box).
+  - New shared volume `financelab-site-images`, same live-update-without-redeploy
+    mechanism as blog/event content.
+  - `index.html` — carousel `<img>` tags got stable `id`s (`hero-img-1/2/3`); the 6
+    placeholder wrappers got `data-image-key` attributes. A `fetch('api/site-images')`
+    on load fills in any slot that has a CMS image, leaving everything else untouched.
+  - `admin.html` — new "Homepage" tab lists all 9 slots grouped under headings, each
+    with the same upload + position-slider editor built for events, generalized to
+    operate on a fixed slot key instead of a row id.
+  - **Also fixed `.resource-img`** (facility photo boxes) — same missing
+    `overflow:hidden` bug as `.event-img` had (`.resource-card` is a flex column), just
+    never triggered yet since no facility photo existed before this feature.
 - **Added an "Events & News" tab to the CMS** (`admin.html`), for the homepage's
   "Events & News" section — create/edit/delete events with a category, date label,
   title, excerpt, and an optional photo upload. This was a bigger change than the blog

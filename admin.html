@@ -142,6 +142,21 @@
   .pos-controls { margin-top: 0.75rem; max-width: 260px; }
   .pos-controls label { font-size: 0.78rem; font-weight: 600; margin: 0.5rem 0 0.15rem; }
   .pos-controls input[type="range"] { width: 100%; }
+  .slot-group-heading { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; color: #777; margin: 1.25rem 0 0.5rem; }
+  .slot-group-heading:first-child { margin-top: 0; }
+  .slot-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  .slot-row .thumb-or-empty { width: 60px; height: 40px; border-radius: 4px; object-fit: cover; display: block; background: #f2ece1; color: #a9998a; font-size: 0.7rem; text-align: center; line-height: 40px; flex: none; }
+  .slot-row .slot-label { flex: 1; font-size: 0.9rem; }
+  .slot-row button { margin-left: auto; background: none; border: 1px solid #ccc; border-radius: 4px; padding: 0.3rem 0.6rem; font-size: 0.8rem; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -167,6 +182,7 @@
       <button id="tab-visits" class="active">Visit Requests</button>
       <button id="tab-blog">Blog Posts</button>
       <button id="tab-events">Events &amp; News</button>
+      <button id="tab-homepage">Homepage</button>
     </div>
 
     <div id="visits-panel">
@@ -284,6 +300,35 @@
         </div>
       </div>
     </div>
+
+    <div id="homepage-panel" class="hidden">
+      <div id="homepage-list-view">
+        <div id="homepage-slot-groups"></div>
+      </div>
+
+      <div id="homepage-form-view" class="hidden">
+        <div class="post-form">
+          <h2 id="homepage-form-heading">Edit photo</h2>
+          <label for="homepage-image">Photo</label>
+          <input id="homepage-image" type="file" accept="image/jpeg,image/png,image/webp,image/gif">
+          <div id="homepage-image-preview-box" class="pos-preview-box hidden">
+            <img id="homepage-image-preview">
+          </div>
+          <div id="homepage-position-controls" class="pos-controls hidden">
+            <label for="homepage-pos-x">Horizontal position</label>
+            <input id="homepage-pos-x" type="range" min="0" max="100" value="50">
+            <label for="homepage-pos-y">Vertical position</label>
+            <input id="homepage-pos-y" type="range" min="0" max="100" value="50">
+          </div>
+          <div class="error" id="homepage-form-error"></div>
+          <div class="actions">
+            <button class="save-btn" id="homepage-save-btn">Save</button>
+            <button class="cancel-btn" id="homepage-cancel-btn">Cancel</button>
+            <button class="cancel-btn" id="homepage-remove-btn">Remove photo</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </main>
 
@@ -377,7 +422,8 @@
   var tabs = {
     visits: { btn: document.getElementById('tab-visits'), panel: document.getElementById('visits-panel') },
     blog: { btn: document.getElementById('tab-blog'), panel: document.getElementById('blog-panel'), onShow: function() { showBlogList(); } },
-    events: { btn: document.getElementById('tab-events'), panel: document.getElementById('events-panel'), onShow: function() { showEventList(); } }
+    events: { btn: document.getElementById('tab-events'), panel: document.getElementById('events-panel'), onShow: function() { showEventList(); } },
+    homepage: { btn: document.getElementById('tab-homepage'), panel: document.getElementById('homepage-panel'), onShow: function() { showHomepageList(); } }
   };
 
   Object.keys(tabs).forEach(function(key) {
@@ -680,6 +726,163 @@
     if (!editingEventId) return;
     if (!confirm('Delete this event? This cannot be undone.')) return;
     api('/events/' + editingEventId, { method: 'DELETE' }).then(function() { showEventList(); });
+  });
+
+  var SITE_IMAGE_SLOTS = [
+    { key: 'hero-1', label: 'Hero Photo 1', group: 'Hero Carousel' },
+    { key: 'hero-2', label: 'Hero Photo 2', group: 'Hero Carousel' },
+    { key: 'hero-3', label: 'Hero Photo 3', group: 'Hero Carousel' },
+    { key: 'partner', label: 'Partner / MOU Photo', group: 'Partner Photo' },
+    { key: 'terminal', label: 'Bloomberg Terminal Photo', group: 'Terminal Photo' },
+    { key: 'facility-1', label: 'Bloomberg Terminal Workstations', group: 'Facility Photos' },
+    { key: 'facility-2', label: 'Research & Data Terminals', group: 'Facility Photos' },
+    { key: 'facility-3', label: 'Demo Trading Accounts', group: 'Facility Photos' },
+    { key: 'facility-4', label: 'Seminar & Breakout Room', group: 'Facility Photos' }
+  ];
+
+  var homepageListView = document.getElementById('homepage-list-view');
+  var homepageFormView = document.getElementById('homepage-form-view');
+  var homepageFormError = document.getElementById('homepage-form-error');
+  var homepageFormHeading = document.getElementById('homepage-form-heading');
+  var homepageImageInput = document.getElementById('homepage-image');
+  var homepageImagePreview = document.getElementById('homepage-image-preview');
+  var homepageImagePreviewBox = document.getElementById('homepage-image-preview-box');
+  var homepagePositionControls = document.getElementById('homepage-position-controls');
+  var homepagePosX = document.getElementById('homepage-pos-x');
+  var homepagePosY = document.getElementById('homepage-pos-y');
+  var homepageRemoveBtn = document.getElementById('homepage-remove-btn');
+  var editingSlotKey = null;
+
+  function updateHomepageImagePosition() {
+    homepageImagePreview.style.objectPosition = homepagePosX.value + '% ' + homepagePosY.value + '%';
+  }
+
+  homepagePosX.addEventListener('input', updateHomepageImagePosition);
+  homepagePosY.addEventListener('input', updateHomepageImagePosition);
+
+  function showHomepageList() {
+    homepageFormView.classList.add('hidden');
+    homepageListView.classList.remove('hidden');
+    loadHomepageImages();
+  }
+
+  function loadHomepageImages() {
+    api('/site-images').then(function(res) {
+      if (res.status === 401) { showLogin(); throw new Error('unauthenticated'); }
+      return res.json();
+    }).then(function(rows) {
+      var byKey = {};
+      rows.forEach(function(row) { byKey[row.key] = row; });
+      renderSlotGroups(byKey);
+    }).catch(function() {});
+  }
+
+  function renderSlotGroups(byKey) {
+    var container = document.getElementById('homepage-slot-groups');
+    container.innerHTML = '';
+    var groups = [];
+    SITE_IMAGE_SLOTS.forEach(function(slot) {
+      if (groups.indexOf(slot.group) === -1) groups.push(slot.group);
+    });
+
+    groups.forEach(function(group) {
+      var heading = document.createElement('div');
+      heading.className = 'slot-group-heading';
+      heading.textContent = group;
+      container.appendChild(heading);
+
+      SITE_IMAGE_SLOTS.filter(function(s) { return s.group === group; }).forEach(function(slot) {
+        var row = byKey[slot.key];
+        var rowEl = document.createElement('div');
+        rowEl.className = 'slot-row';
+
+        var thumb;
+        if (row && row.image_path) {
+          thumb = document.createElement('img');
+          thumb.className = 'thumb-or-empty';
+          thumb.src = row.image_path;
+          thumb.style.objectPosition = row.image_pos_x + '% ' + row.image_pos_y + '%';
+        } else {
+          thumb = document.createElement('span');
+          thumb.className = 'thumb-or-empty';
+          thumb.textContent = 'No photo';
+        }
+        rowEl.appendChild(thumb);
+
+        var label = document.createElement('span');
+        label.className = 'slot-label';
+        label.textContent = slot.label;
+        rowEl.appendChild(label);
+
+        var editBtn = document.createElement('button');
+        editBtn.textContent = 'Edit';
+        editBtn.addEventListener('click', function() { openHomepageForm(slot, row); });
+        rowEl.appendChild(editBtn);
+
+        container.appendChild(rowEl);
+      });
+    });
+  }
+
+  function clearHomepageForm() {
+    homepageImageInput.value = '';
+    homepageImagePreviewBox.classList.add('hidden');
+    homepagePositionControls.classList.add('hidden');
+    homepageImagePreview.src = '';
+    homepagePosX.value = 50;
+    homepagePosY.value = 50;
+    updateHomepageImagePosition();
+    homepageFormError.textContent = '';
+  }
+
+  function showHomepageImage(src, posX, posY) {
+    homepageImagePreview.src = src;
+    homepageImagePreviewBox.classList.remove('hidden');
+    homepagePositionControls.classList.remove('hidden');
+    homepagePosX.value = posX;
+    homepagePosY.value = posY;
+    updateHomepageImagePosition();
+  }
+
+  function openHomepageForm(slot, row) {
+    clearHomepageForm();
+    editingSlotKey = slot.key;
+    homepageListView.classList.add('hidden');
+    homepageFormView.classList.remove('hidden');
+    homepageFormHeading.textContent = slot.label;
+    homepageRemoveBtn.classList.toggle('hidden', !(row && row.image_path));
+
+    if (row && row.image_path) {
+      showHomepageImage(row.image_path, row.image_pos_x, row.image_pos_y);
+    }
+  }
+
+  homepageImageInput.addEventListener('change', function() {
+    var file = homepageImageInput.files[0];
+    if (!file) return;
+    showHomepageImage(URL.createObjectURL(file), 50, 50);
+  });
+
+  document.getElementById('homepage-cancel-btn').addEventListener('click', showHomepageList);
+
+  document.getElementById('homepage-save-btn').addEventListener('click', function() {
+    var formData = new FormData();
+    formData.append('image_pos_x', homepagePosX.value);
+    formData.append('image_pos_y', homepagePosY.value);
+    if (homepageImageInput.files[0]) formData.append('image', homepageImageInput.files[0]);
+
+    api('/site-images/' + editingSlotKey, { method: 'PUT', body: formData }).then(function(res) {
+      if (!res.ok) return res.json().then(function(err) { throw new Error(err.error || 'Save failed'); });
+      showHomepageList();
+    }).catch(function(err) {
+      homepageFormError.textContent = err.message;
+    });
+  });
+
+  homepageRemoveBtn.addEventListener('click', function() {
+    if (!editingSlotKey) return;
+    if (!confirm('Remove this photo? It will revert to the default appearance.')) return;
+    api('/site-images/' + editingSlotKey, { method: 'DELETE' }).then(function() { showHomepageList(); });
   });
 
   document.getElementById('login-btn').addEventListener('click', function() {

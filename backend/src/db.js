@@ -40,6 +40,14 @@ db.exec(`
     image_path TEXT,
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
+
+  CREATE TABLE IF NOT EXISTS site_images (
+    key TEXT PRIMARY KEY,
+    image_path TEXT,
+    image_pos_x INTEGER NOT NULL DEFAULT 50,
+    image_pos_y INTEGER NOT NULL DEFAULT 50,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
 `);
 
 const eventColumns = db.prepare('PRAGMA table_info(events)').all().map((c) => c.name);
@@ -148,4 +156,27 @@ if (eventCount === 0) {
   }
 }
 
+const SITE_IMAGE_KEYS = [
+  'hero-1', 'hero-2', 'hero-3',
+  'partner', 'terminal',
+  'facility-1', 'facility-2', 'facility-3', 'facility-4',
+];
+
+const SEED_SITE_IMAGE_PATHS = {
+  'hero-1': 'assets/images/car-1.jpg',
+  'hero-2': 'assets/images/car-2.jpg',
+  'hero-3': 'assets/images/car-3.jpg',
+};
+
+const siteImageCount = db.prepare('SELECT COUNT(*) AS n FROM site_images').get().n;
+if (siteImageCount === 0) {
+  const insertSiteImage = db.prepare(`
+    INSERT INTO site_images (key, image_path) VALUES (@key, @image_path)
+  `);
+  for (const key of SITE_IMAGE_KEYS) {
+    insertSiteImage.run({ key, image_path: SEED_SITE_IMAGE_PATHS[key] || null });
+  }
+}
+
+db.SITE_IMAGE_KEYS = SITE_IMAGE_KEYS;
 module.exports = db;

@@ -142,7 +142,7 @@
   .resources-inner h2{font-weight:700;font-size:28px;margin:0 0 10px}
   .resources-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px}
   .resource-card{background:#fff;border:1px solid #e6ddd0;border-radius:8px;overflow:hidden;display:flex;flex-direction:column}
-  .resource-img{width:100%;aspect-ratio:4/3}
+  .resource-img{width:100%;aspect-ratio:4/3;overflow:hidden}
   .resource-body{padding:16px 18px;display:flex;flex-direction:column;gap:6px}
   .resource-body h3{font-weight:600;font-size:15px;margin:0}
   .resource-body p{font-size:13px;line-height:1.55;color:#5c5650;margin:0}
@@ -238,9 +238,9 @@
     <div class="hero">
       <div class="hero-bg">
         <div class="carousel-track" id="carousel-track">
-          <div class="carousel-slide"><img src="assets/images/car-1.jpg" alt="Students observing Bloomberg terminals in the Finance Lab"></div>
-          <div class="carousel-slide"><img src="assets/images/car-2.jpg" alt="IBA SBS staff and students gathered in the atrium"></div>
-          <div class="carousel-slide"><img src="assets/images/car-3.jpg" alt="Faculty demonstrating the Bloomberg Terminal to students"></div>
+          <div class="carousel-slide"><img id="hero-img-1" src="assets/images/car-1.jpg" alt="Students observing Bloomberg terminals in the Finance Lab"></div>
+          <div class="carousel-slide"><img id="hero-img-2" src="assets/images/car-2.jpg" alt="IBA SBS staff and students gathered in the atrium"></div>
+          <div class="carousel-slide"><img id="hero-img-3" src="assets/images/car-3.jpg" alt="Faculty demonstrating the Bloomberg Terminal to students"></div>
         </div>
       </div>
       <div class="hero-overlay"></div>
@@ -289,7 +289,7 @@
           <p>A Memorandum of Understanding between the School of Business Studies and HBL established the Finance Lab, providing SBS students an experiential learning opportunity built around live market infrastructure and demo trading facilities.</p>
           <div><a href="#" data-nav="events">Read about the partnership &rarr;</a></div>
         </div>
-        <div class="partner-img"><div class="imgslot">MOU signing photo</div></div>
+        <div class="partner-img" data-image-key="partner"><div class="imgslot">MOU signing photo</div></div>
       </div>
     </div>
 
@@ -324,7 +324,7 @@
     </div>
 
     <div class="terminal-section">
-      <div class="terminal-img"><div class="imgslot">Bloomberg Terminal photo</div></div>
+      <div class="terminal-img" data-image-key="terminal"><div class="imgslot">Bloomberg Terminal photo</div></div>
       <div class="terminal-text">
         <span class="eyebrow-gold">Centerpiece</span>
         <h2>The Bloomberg Terminal</h2>
@@ -343,10 +343,10 @@
         <span class="eyebrow-gold">Lab Resources</span>
         <h2>Beyond the terminal</h2>
         <div class="resources-grid">
-          <div class="resource-card"><div class="resource-img"><div class="imgslot">Facility photo</div></div><div class="resource-body"><h3>Bloomberg Terminal Workstations</h3><p>Dedicated seats for coursework and independent research.</p></div></div>
-          <div class="resource-card"><div class="resource-img"><div class="imgslot">Facility photo</div></div><div class="resource-body"><h3>Research &amp; Data Terminals</h3><p>Supplementary access to market and company data.</p></div></div>
-          <div class="resource-card"><div class="resource-img"><div class="imgslot">Facility photo</div></div><div class="resource-body"><h3>Demo Trading Accounts</h3><p>Simulated brokerage accounts for practice trading.</p></div></div>
-          <div class="resource-card"><div class="resource-img"><div class="imgslot">Facility photo</div></div><div class="resource-body"><h3>Seminar &amp; Breakout Room</h3><p>Space for guest sessions and faculty-led workshops.</p></div></div>
+          <div class="resource-card"><div class="resource-img" data-image-key="facility-1"><div class="imgslot">Facility photo</div></div><div class="resource-body"><h3>Bloomberg Terminal Workstations</h3><p>Dedicated seats for coursework and independent research.</p></div></div>
+          <div class="resource-card"><div class="resource-img" data-image-key="facility-2"><div class="imgslot">Facility photo</div></div><div class="resource-body"><h3>Research &amp; Data Terminals</h3><p>Supplementary access to market and company data.</p></div></div>
+          <div class="resource-card"><div class="resource-img" data-image-key="facility-3"><div class="imgslot">Facility photo</div></div><div class="resource-body"><h3>Demo Trading Accounts</h3><p>Simulated brokerage accounts for practice trading.</p></div></div>
+          <div class="resource-card"><div class="resource-img" data-image-key="facility-4"><div class="imgslot">Facility photo</div></div><div class="resource-body"><h3>Seminar &amp; Breakout Room</h3><p>Space for guest sessions and faculty-led workshops.</p></div></div>
         </div>
       </div>
     </div>
@@ -725,6 +725,30 @@
     renderHomeEvents();
     renderFilters();
     renderEventsFull();
+  }).catch(function() {});
+
+  function applySiteImage(row) {
+    if (!row.image_path) return;
+    var posStyle = row.image_pos_x + '% ' + row.image_pos_y + '%';
+
+    var heroMatch = row.key.match(/^hero-(\d)$/);
+    if (heroMatch) {
+      var heroImg = document.getElementById('hero-img-' + heroMatch[1]);
+      if (heroImg) {
+        heroImg.src = row.image_path;
+        heroImg.style.objectPosition = posStyle;
+      }
+      return;
+    }
+
+    var wrapper = document.querySelector('[data-image-key="' + row.key + '"]');
+    if (wrapper) {
+      wrapper.innerHTML = '<img src="' + escapeHtml(row.image_path) + '" alt="" style="width:100%;height:100%;object-fit:cover;object-position:' + posStyle + '">';
+    }
+  }
+
+  fetch('api/site-images').then(function(res) { return res.json(); }).then(function(rows) {
+    rows.forEach(applySiteImage);
   }).catch(function() {});
 
   renderVisitTypes();
