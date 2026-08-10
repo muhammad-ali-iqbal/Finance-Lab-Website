@@ -8,21 +8,52 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
-// Body convention: blank-line-separated blocks. "## " starts a heading,
-// "- " (repeated on consecutive lines) starts a bullet list, anything else is a paragraph.
+// Body convention: "## " starts a heading, "- " (repeated on consecutive
+// lines) starts a bullet list, anything else is a paragraph. Recognized
+// line-by-line rather than requiring a blank line around headings/lists —
+// someone who just presses Enter once above a "## " line (instead of leaving
+// a truly blank line) still gets a real heading, not literal "##" text.
 function renderBody(md) {
-  const blocks = String(md || '').split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
-  return blocks.map((block) => {
-    if (block.startsWith('## ')) {
-      return `    <h2>${escapeHtml(block.slice(3).trim())}</h2>`;
+  const lines = String(md || '').replace(/\r\n/g, '\n').split('\n');
+  const blocks = [];
+  let para = [];
+  let list = [];
+
+  function flushPara() {
+    if (para.length) {
+      blocks.push(`    <p>${escapeHtml(para.join(' '))}</p>`);
+      para = [];
     }
-    const lines = block.split('\n').map((l) => l.trim()).filter(Boolean);
-    if (lines.every((l) => l.startsWith('- '))) {
-      const items = lines.map((l) => `      <li>${escapeHtml(l.slice(2).trim())}</li>`).join('\n');
-      return `    <ul>\n${items}\n    </ul>`;
+  }
+  function flushList() {
+    if (list.length) {
+      const items = list.map((l) => `      <li>${escapeHtml(l)}</li>`).join('\n');
+      blocks.push(`    <ul>\n${items}\n    </ul>`);
+      list = [];
     }
-    return `    <p>${escapeHtml(block)}</p>`;
-  }).join('\n\n');
+  }
+
+  lines.forEach((rawLine) => {
+    const line = rawLine.trim();
+    if (line.startsWith('## ')) {
+      flushPara();
+      flushList();
+      blocks.push(`    <h2>${escapeHtml(line.slice(3).trim())}</h2>`);
+    } else if (line.startsWith('- ')) {
+      flushPara();
+      list.push(line.slice(2).trim());
+    } else if (line === '') {
+      flushPara();
+      flushList();
+    } else {
+      flushList();
+      para.push(line);
+    }
+  });
+  flushPara();
+  flushList();
+
+  return blocks.join('\n\n');
 }
 
 function renderBlogPost(post) {
