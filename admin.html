@@ -237,7 +237,7 @@
           <input id="post-teaser" type="text">
           <label for="post-body">Body</label>
           <textarea id="post-body" rows="14" placeholder="Write paragraphs separated by a blank line.&#10;&#10;## Use this for a heading&#10;&#10;- Use this for&#10;- a bullet list&#10;&#10;Math: \(R_m - Rf\) for inline, \[E(R_i) = R_f + \beta_i (R_m - R_f)\] for a standalone equation."></textarea>
-          <div class="hint">Blank line = new paragraph. A line starting with "## " is a heading. Lines starting with "- " become a bullet list. For math, use <code>\(...\)</code> inline or <code>\[...\]</code> on its own for a standalone equation — not <code>$...$</code>, since dollar amounts should stay plain text.</div>
+          <div class="hint">Blank line = new paragraph. A line starting with "## " is a heading. Lines starting with "- " become a bullet list. For math, use <code>\(...\)</code> inline or <code>\[...\]</code> on its own for a standalone equation — not <code>$...$</code>, since dollar amounts should stay plain text. Math is rendered with <a href="https://katex.org/docs/supported.html" target="_blank" rel="noopener">KaTeX</a> — see its docs for the full list of supported commands (Greek letters, fractions, sums, matrices, etc.).</div>
           <label for="post-cta">Call-to-action text</label>
           <input id="post-cta" type="text">
           <div class="error" id="post-form-error"></div>
