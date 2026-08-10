@@ -275,11 +275,7 @@
       <span class="eyebrow-gold" data-text-key="offers-eyebrow">What the Lab Offers</span>
       <h2 data-text-key="offers-heading">Three ways students engage with real markets</h2>
     </div>
-    <div class="offers-grid">
-      <a class="offer-card" href="blog/bloomberg-terminal-access"><div class="offer-bar"></div><h3>Bloomberg Terminal Access</h3><p>Hands-on time on a professional-grade terminal — the same tool used across trading floors and research desks.</p></a>
-      <a class="offer-card" href="blog/real-time-market-data"><div class="offer-bar"></div><h3>Real-Time Market Data</h3><p>Live pricing across equities, fixed income, and FX feeds classroom exercises and independent research.</p></a>
-      <a class="offer-card" href="blog/virtual-trading-accounts"><div class="offer-bar"></div><h3>Virtual Trading Accounts</h3><p>Demo brokerage accounts let students execute and track trades without risking real capital.</p></a>
-    </div>
+    <div class="offers-grid" id="offers-grid"></div>
 
     <div class="partner" id="partner-section">
       <div class="partner-inner">
@@ -716,6 +712,23 @@
   document.getElementById('scroll-indicator').addEventListener('click', function(){
     document.getElementById('offers-section').scrollIntoView({ behavior: 'smooth' });
   });
+
+  function renderOffers(posts) {
+    var grid = document.getElementById('offers-grid');
+    grid.innerHTML = '';
+    posts.forEach(function(post) {
+      var card = document.createElement('a');
+      card.className = 'offer-card';
+      card.href = 'blog/' + encodeURIComponent(post.slug);
+      card.innerHTML =
+        '<div class="offer-bar"></div>' +
+        '<h3>' + escapeHtml(post.title) + '</h3>' +
+        '<p>' + escapeHtml(post.teaser) + '</p>';
+      grid.appendChild(card);
+    });
+  }
+
+  fetch('api/blog-posts').then(function(res) { return res.json(); }).then(renderOffers).catch(function() {});
 
   fetch('api/events').then(function(res) { return res.json(); }).then(function(rows) {
     events = rows.map(function(row) {

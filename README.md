@@ -85,6 +85,31 @@ npm start
 
 ## Recent changes
 
+**2026-08-10**
+- **Fixed: deleting a blog post via the CMS broke every image on the live site.**
+  Root cause was two independent bugs that compounded:
+  1. The homepage's "What the Lab Offers" cards were hardcoded `<a href="blog/<slug>">`
+     links in `index.html`, disconnected from the CMS. Deleting a post left a dangling
+     link with no way to remove it except a manual `index.html` edit.
+  2. `nginx.conf`'s catch-all `location / { try_files ... /index.html; }` also matched
+     `/blog/<deleted-slug>`: since the rendered file no longer exists, nginx silently
+     served `index.html`'s content via an internal rewrite (not a redirect), so the
+     browser's URL stayed at `/blog/<slug>`. Every relative path on that page
+     (`assets/images/...`, and the offer cards' own `blog/...` links) then resolved
+     one level too deep, breaking every image — and repeatedly clicking an offer card
+     kept stacking another `blog/` onto the URL (`/blog/blog/blog/...`).
+  Fixes:
+  - `nginx.conf` — added a dedicated `location /blog/ { try_files $uri $uri.html =404; }`
+    so a missing/deleted slug now 404s honestly instead of falling through to the
+    homepage under the wrong path.
+  - `backend/src/routes/blog.js` — `GET /api/blog-posts` (slug/title/teaser) is now
+    **public** (moved above `router.use(requireAdmin)`); `GET /:slug`, `PUT`, `DELETE`
+    remain admin-only.
+  - `index.html` — the 3 hardcoded offer cards are gone; `#offers-grid` is now
+    populated at load from `fetch('api/blog-posts')`, same pattern as the Events
+    section. Adding or deleting a post now automatically adds/removes its homepage
+    card — no more manual `index.html` edits, and no more dangling links.
+
 **2026-07-23 (even later)**
 - **Added a dedicated "Facilities" CMS tab**, bundling the Facilities page's photos
   and text together in one place instead of scattering them across "Homepage" and

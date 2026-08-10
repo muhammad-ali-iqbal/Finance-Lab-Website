@@ -9,12 +9,14 @@ const router = express.Router();
 
 const BLOG_CONTENT_DIR = process.env.BLOG_CONTENT_DIR || path.join(__dirname, '..', '..', 'blog-content');
 
-router.use(requireAdmin);
-
+// Public: used by the homepage to render the "What the Lab Offers" cards
+// automatically from whatever posts currently exist (see index.html).
 router.get('/', (req, res) => {
-  const rows = db.prepare('SELECT slug, title, updated_at FROM blog_posts ORDER BY title').all();
+  const rows = db.prepare('SELECT slug, title, teaser, updated_at FROM blog_posts ORDER BY title').all();
   res.json(rows);
 });
+
+router.use(requireAdmin);
 
 router.get('/:slug', (req, res) => {
   const row = db.prepare('SELECT * FROM blog_posts WHERE slug = ?').get(req.params.slug);
