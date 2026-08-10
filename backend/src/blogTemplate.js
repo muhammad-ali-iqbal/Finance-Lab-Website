@@ -1,3 +1,5 @@
+const katex = require('katex');
+
 const SLUG_RE = /^[a-z0-9-]+$/;
 
 function escapeHtml(str) {
@@ -8,26 +10,71 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
+// Renders a line of body text to HTML, treating \[...\] as display math and
+// \(...\) as inline math (KaTeX, rendered server-side once at save time —
+// the output is trusted HTML and spliced in verbatim). Everything outside
+// those delimiters is escaped as plain text, same as before. Deliberately
+// NOT using $...$ for math: this is a finance blog, so "$100" / "$50 cost"
+// need to keep meaning literal dollar amounts, not open a math expression.
+const MATH_RE = /\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)/g;
+function renderInline(text) {
+  const str = String(text == null ? '' : text);
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+  MATH_RE.lastIndex = 0;
+  while ((match = MATH_RE.exec(str)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(escapeHtml(str.slice(lastIndex, match.index)));
+    }
+    const displayMath = match[1];
+    const latex = displayMath !== undefined ? displayMath : match[2];
+    parts.push(katex.renderToString(latex, {
+      throwOnError: false, // render a friendly in-place error instead of failing the whole save
+      displayMode: displayMath !== undefined,
+      output: 'html',
+    }));
+    lastIndex = MATH_RE.lastIndex;
+  }
+  if (lastIndex < str.length) {
+    parts.push(escapeHtml(str.slice(lastIndex)));
+  }
+  return parts.join('');
+}
+
 // Body convention: "## " starts a heading, "- " (repeated on consecutive
 // lines) starts a bullet list, anything else is a paragraph. Recognized
 // line-by-line rather than requiring a blank line around headings/lists —
 // someone who just presses Enter once above a "## " line (instead of leaving
 // a truly blank line) still gets a real heading, not literal "##" text.
+//
+// Also tolerant of markers typed without the required spacing or line
+// breaks at all (e.g. pasted as one continuous block): "##Heading" is
+// normalized to its own "## Heading" line wherever it appears, and a bare
+// "-Item" (hyphen glued directly to the next word, preceded by whitespace)
+// is normalized to its own "- Item" line. A hyphen inside a normal word
+// ("book-to-market") or a spaced dash ("R_m - Rf") is left alone, since
+// neither has a non-space character immediately after the hyphen preceded
+// by whitespace/start-of-text.
 function renderBody(md) {
-  const lines = String(md || '').replace(/\r\n/g, '\n').split('\n');
+  let normalized = String(md || '').replace(/\r\n/g, '\n');
+  normalized = normalized.replace(/##\s*/g, '\n## ');
+  normalized = normalized.replace(/(^|\s)-(?=\S)/g, '$1\n- ');
+
+  const lines = normalized.split('\n');
   const blocks = [];
   let para = [];
   let list = [];
 
   function flushPara() {
     if (para.length) {
-      blocks.push(`    <p>${escapeHtml(para.join(' '))}</p>`);
+      blocks.push(`    <p>${renderInline(para.join(' '))}</p>`);
       para = [];
     }
   }
   function flushList() {
     if (list.length) {
-      const items = list.map((l) => `      <li>${escapeHtml(l)}</li>`).join('\n');
+      const items = list.map((l) => `      <li>${renderInline(l)}</li>`).join('\n');
       blocks.push(`    <ul>\n${items}\n    </ul>`);
       list = [];
     }
@@ -38,7 +85,7 @@ function renderBody(md) {
     if (line.startsWith('## ')) {
       flushPara();
       flushList();
-      blocks.push(`    <h2>${escapeHtml(line.slice(3).trim())}</h2>`);
+      blocks.push(`    <h2>${renderInline(line.slice(3).trim())}</h2>`);
     } else if (line.startsWith('- ')) {
       flushPara();
       list.push(line.slice(2).trim());
@@ -66,6 +113,7 @@ function renderBlogPost(post) {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.18.3/dist/katex.min.css">
 <style>
   *,*::before,*::after{box-sizing:border-box}
   body{margin:0;background:#faf7f2;font-family:'IBM Plex Sans',sans-serif;-webkit-font-smoothing:antialiased;color:#221d1b}

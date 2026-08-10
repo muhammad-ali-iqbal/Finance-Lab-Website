@@ -85,6 +85,30 @@ npm start
 
 ## Recent changes
 
+**2026-08-10 (later)**
+- **Added LaTeX math support to blog post bodies.** `## `/`- ` heading/bullet
+  markers were also made tolerant of missing spaces and missing line breaks
+  (e.g. `##Heading` glued mid-paragraph, `-Item` with no space) — previously
+  these rendered as literal `##`/`-` text instead of real headings/lists.
+  - `backend/src/blogTemplate.js` — new `renderInline()` helper: text is
+    scanned for `\(...\)` (inline) and `\[...\]` (display) math and rendered
+    server-side via the new `katex` dependency (`katex.renderToString(...,
+    { throwOnError: false, output: 'html' })`) **once, at save time** — the
+    resulting HTML is baked into the static `.html` file, no client JS or
+    CDN script needed to display math. `$...$` was deliberately NOT used as
+    a math delimiter (this is a finance blog — `$100`, `$50 cost` etc. need
+    to stay literal). A malformed expression degrades to a small red
+    error note (KaTeX's built-in behavior) instead of failing the save.
+  - KaTeX's stylesheet is pulled from a CDN (`cdn.jsdelivr.net`) in the blog
+    page `<head>`, same pattern already used for Google Fonts — needed
+    because the rendered math HTML relies on KaTeX's CSS/font files for
+    correct layout, even though the HTML itself is pre-rendered.
+  - `admin.html` — updated the Body field's hint/placeholder to document the
+    math syntax.
+  - Existing posts saved before this change keep their old rendered HTML on
+    disk; re-saving a post (no content change needed) re-renders it with
+    the fixed heading/bullet parsing and enables math in it.
+
 **2026-08-10**
 - **Fixed: deleting a blog post via the CMS broke every image on the live site.**
   Root cause was two independent bugs that compounded:
