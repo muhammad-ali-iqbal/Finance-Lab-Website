@@ -85,6 +85,19 @@ npm start
 
 ## Recent changes
 
+**2026-08-24**
+- **Blog post CTA buttons are now per-post.** `blog_posts` gained `cta_href` and
+  `cta_label` columns (defaults `../#contact` / `Book a Visit`, so existing posts
+  are unchanged), editable from the two new fields under "Call-to-action text" in
+  the admin blog editor. The migration in `backend/src/db.js` also backfills
+  `virtual-trading-accounts` with `https://financelab.iba.edu.pk/simtrader/login`
+  / "Click here".
+- **Post HTML is regenerated on backend boot.** Previously `blog/<slug>.html` was
+  only written when a post was saved from the CMS, so any change to
+  `blogTemplate.js` silently failed to reach already-published posts until
+  someone re-saved them. `db.js` now re-renders every row in `blog_posts` at
+  startup — a deploy is enough to pick up template changes.
+
 **2026-08-10 (later)**
 - **Added LaTeX math support to blog post bodies.** `## `/`- ` heading/bullet
   markers were also made tolerant of missing spaces and missing line breaks

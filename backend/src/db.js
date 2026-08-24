@@ -64,6 +64,18 @@ if (!eventColumns.includes('image_pos_y')) {
   db.exec('ALTER TABLE events ADD COLUMN image_pos_y INTEGER NOT NULL DEFAULT 50');
 }
 
+const postColumns = db.prepare('PRAGMA table_info(blog_posts)').all().map((c) => c.name);
+if (!postColumns.includes('cta_href')) {
+  db.exec("ALTER TABLE blog_posts ADD COLUMN cta_href TEXT NOT NULL DEFAULT '../#contact'");
+  db.exec("ALTER TABLE blog_posts ADD COLUMN cta_label TEXT NOT NULL DEFAULT 'Book a Visit'");
+  // The demo-trading post sends readers straight to SimTrader rather than the visit form.
+  db.prepare('UPDATE blog_posts SET cta_href = @href, cta_label = @label WHERE slug = @slug').run({
+    href: 'https://financelab.iba.edu.pk/simtrader/login',
+    label: 'Click here',
+    slug: 'virtual-trading-accounts',
+  });
+}
+
 const BLOG_CONTENT_DIR = process.env.BLOG_CONTENT_DIR || path.join(__dirname, '..', 'blog-content');
 
 const SEED_POSTS = [
@@ -131,15 +143,21 @@ Demo trading accounts are available to SBS students enrolled in relevant courses
 
 const postCount = db.prepare('SELECT COUNT(*) AS n FROM blog_posts').get().n;
 if (postCount === 0) {
-  fs.mkdirSync(BLOG_CONTENT_DIR, { recursive: true });
   const insert = db.prepare(`
     INSERT INTO blog_posts (slug, title, teaser, body_md, cta_text)
     VALUES (@slug, @title, @teaser, @body_md, @cta_text)
   `);
   for (const post of SEED_POSTS) {
     insert.run(post);
-    fs.writeFileSync(path.join(BLOG_CONTENT_DIR, `${post.slug}.html`), renderBlogPost(post));
   }
+}
+
+// Post HTML is written at save time, so a template change would otherwise only
+// reach posts that happen to be re-saved afterwards. Regenerating on boot keeps
+// every file in step with the template and the DB.
+fs.mkdirSync(BLOG_CONTENT_DIR, { recursive: true });
+for (const post of db.prepare('SELECT * FROM blog_posts').all()) {
+  fs.writeFileSync(path.join(BLOG_CONTENT_DIR, `${post.slug}.html`), renderBlogPost(post));
 }
 
 const SEED_EVENTS = [

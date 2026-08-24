@@ -240,6 +240,11 @@
           <div class="hint">Blank line = new paragraph. A line starting with "## " is a heading. Lines starting with "- " become a bullet list. For math, use <code>\(...\)</code> inline or <code>\[...\]</code> on its own for a standalone equation — not <code>$...$</code>, since dollar amounts should stay plain text. Math is rendered with <a href="https://katex.org/docs/supported.html" target="_blank" rel="noopener">KaTeX</a> — see its docs for the full list of supported commands (Greek letters, fractions, sums, matrices, etc.).</div>
           <label for="post-cta">Call-to-action text</label>
           <input id="post-cta" type="text">
+          <label for="post-cta-label">Call-to-action button label</label>
+          <input id="post-cta-label" type="text" placeholder="Book a Visit">
+          <label for="post-cta-href">Call-to-action button link</label>
+          <input id="post-cta-href" type="text" placeholder="../#contact">
+          <div class="hint">Leave both blank for the default &ldquo;Book a Visit&rdquo; button linking to the contact form. Use a full <code>https://</code> address to send readers elsewhere.</div>
           <div class="error" id="post-form-error"></div>
           <div class="actions">
             <button class="save-btn" id="post-save-btn">Save</button>
@@ -542,6 +547,8 @@
     document.getElementById('post-teaser').value = '';
     document.getElementById('post-body').value = '';
     document.getElementById('post-cta').value = '';
+    document.getElementById('post-cta-label').value = '';
+    document.getElementById('post-cta-href').value = '';
     blogFormError.textContent = '';
   }
 
@@ -565,6 +572,8 @@
       document.getElementById('post-teaser').value = post.teaser;
       document.getElementById('post-body').value = post.body_md;
       document.getElementById('post-cta').value = post.cta_text;
+      document.getElementById('post-cta-label').value = post.cta_label || '';
+      document.getElementById('post-cta-href').value = post.cta_href || '';
     });
   }
 
@@ -578,6 +587,8 @@
       teaser: document.getElementById('post-teaser').value.trim(),
       body_md: document.getElementById('post-body').value,
       cta_text: document.getElementById('post-cta').value.trim(),
+      cta_label: document.getElementById('post-cta-label').value.trim(),
+      cta_href: document.getElementById('post-cta-href').value.trim(),
     };
 
     if (!/^[a-z0-9-]+$/.test(slug)) {

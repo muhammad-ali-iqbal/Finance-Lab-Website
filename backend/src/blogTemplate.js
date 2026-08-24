@@ -184,7 +184,7 @@ ${renderBody(post.body_md)}
 
     <div class="cta-band">
       <p>${escapeHtml(post.cta_text)}</p>
-      <a class="btn-primary" href="../#contact">Book a Visit</a>
+      <a class="btn-primary" href="${escapeHtml(post.cta_href || '../#contact')}">${escapeHtml(post.cta_label || 'Book a Visit')}</a>
     </div>
   </div>
 

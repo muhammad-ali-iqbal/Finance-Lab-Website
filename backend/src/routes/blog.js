@@ -30,21 +30,31 @@ router.put('/:slug', (req, res) => {
     return res.status(400).json({ error: 'Slug must be lowercase letters, numbers, and hyphens only.' });
   }
 
-  const { title, teaser, body_md, cta_text } = req.body || {};
+  const { title, teaser, body_md, cta_text, cta_href, cta_label } = req.body || {};
   if (!title || !teaser || !body_md || !cta_text) {
     return res.status(400).json({ error: 'title, teaser, body_md, and cta_text are required.' });
   }
 
-  const post = { slug, title, teaser, body_md, cta_text };
+  const post = {
+    slug,
+    title,
+    teaser,
+    body_md,
+    cta_text,
+    cta_href: (cta_href || '').trim() || '../#contact',
+    cta_label: (cta_label || '').trim() || 'Book a Visit',
+  };
 
   db.prepare(`
-    INSERT INTO blog_posts (slug, title, teaser, body_md, cta_text, updated_at)
-    VALUES (@slug, @title, @teaser, @body_md, @cta_text, datetime('now'))
+    INSERT INTO blog_posts (slug, title, teaser, body_md, cta_text, cta_href, cta_label, updated_at)
+    VALUES (@slug, @title, @teaser, @body_md, @cta_text, @cta_href, @cta_label, datetime('now'))
     ON CONFLICT(slug) DO UPDATE SET
       title = excluded.title,
       teaser = excluded.teaser,
       body_md = excluded.body_md,
       cta_text = excluded.cta_text,
+      cta_href = excluded.cta_href,
+      cta_label = excluded.cta_label,
       updated_at = excluded.updated_at
   `).run(post);
 
