@@ -85,6 +85,15 @@ npm start
 
 ## Recent changes
 
+**2026-10-23**
+- **Added an IBA favicon** (it also shows next to the site in Google search results,
+  which showed a generic globe before). The icons are the red IBA mark cropped from
+  `assets/images/logo.png`: `favicon.ico` (16/32/48, at the site root — Dockerfile
+  now copies it), `assets/images/favicon-48.png`, `favicon-192.png` and
+  `apple-touch-icon.png`. The `<link rel="icon">` tags are in `index.html`,
+  `admin.html` and `backend/src/blogTemplate.js` (blog posts pick them up the next
+  time the backend boots).
+
 **2026-08-24**
 - **Blog post CTA buttons are now per-post.** `blog_posts` gained `cta_href` and
   `cta_label` columns (defaults `../#contact` / `Book a Visit`, so existing posts
