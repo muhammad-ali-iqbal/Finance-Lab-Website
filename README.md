@@ -85,6 +85,12 @@ npm start
 
 ## Recent changes
 
+**2026-11-11**
+- **Google Search Console verification file** `google932569ca4f8f0c61.html` at the
+  repo root (Dockerfile copies it to the nginx web root). **Do not delete it** —
+  Google re-checks it periodically and the property becomes unverified without it.
+- Removed the ↗ arrow after "SimTrader" in the `index.html` nav.
+
 **2026-10-23**
 - **Added an IBA favicon** (it also shows next to the site in Google search results,
   which showed a generic globe before). The icons are the red IBA mark cropped from
